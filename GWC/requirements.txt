@@ -6,3 +6,4 @@ astropy==5.2.2
 numpy==1.23.5
 scipy==1.10.0
 plotly==5.15.0
+streamlit-plotly-events==0.0.6
