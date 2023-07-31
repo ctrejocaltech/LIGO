@@ -4,6 +4,9 @@ import plotly.express as px
 import streamlit as st
 from streamlit_plotly_events import plotly_events
 from streamlit_elements import elements, mui, html
+from streamlit_elements import dashboard
+import plotly.graph_objects as go
+
 
 #other imports
 import matplotlib.pyplot as plt
@@ -16,7 +19,6 @@ from gwpy.timeseries import TimeSeries
 from gwosc.locate import get_urls
 from gwosc import datasets
 from gwosc.datasets import event_gps
-from gwpy.timeseries import TimeSeries
 from gwosc.api import fetch_event_json
 
 from copy import deepcopy
@@ -42,43 +44,63 @@ _lock = RendererAgg.lock
 # --Set page config
 apptitle = 'GWC Global View'
 
-st.set_page_config(page_title=apptitle)
+st.set_page_config(layout='wide', page_title=apptitle)
 
 #Title the app
 st.title('GWC Dashboard')
 
-
-#Dashboard elements
-
-with elements("new_element"):
-    mui.Typography("Hello Karen, hehe")
-
-
 # Fetch the data from the URL and load it into a DataFrame
-url = 'https://gwosc.org/eventapi/csv/GWTC/'
-data = pd.read_csv(url)
+@st.cache_data
+def get_data() -> pd.DataFrame:
+    return pd.read_csv("https://gwosc.org/eventapi/csv/GWTC/")
+
+df = get_data()
+
+count = df.commonName.unique().size
+
+#Top Dashboard Elements
+st.markdown('### Metrics')
+
+col1, col2, col3 = st.columns(3)
+
+col1.metric(
+    label="Total Observations to date",
+    value=(count),
+)
+
+col2.metric(
+    label="Pie Chart",
+    value=("test"),
+
+)
+
+col3.metric(
+    label="Total Observation time",
+    value=("test")
+)
+
 
 #create chart
-fig = px.scatter(data, x="total_mass_source", y="commonName")
+event_chart = px.scatter(df, x="total_mass_source", y="commonName")
 
-fig.update_layout(
+event_chart.update_layout(
     yaxis=dict(
         tickmode='array',
         title='Event',  # Set your y-axis title here
     ),
     margin=dict(l=150),  # Adjust the left margin value to create more space for the y-axis labels
 )
-fig.update_layout(
+event_chart.update_layout(
     xaxis_title="Total Mass",
     yaxis_title="Event",
 )
-fig.update_yaxes(range=[0,30],
+event_chart.update_yaxes(range=[0,30],
     title_font = {"size": 15},
     title_standoff = 50,
 )
 
 #get user input
-select_event = plotly_events(fig, click_event=True)
+select_event = plotly_events(event_chart, click_event=True)
 selected_gwc_event = [point['y'] for point in select_event]
 
 # Display the selected points
@@ -102,3 +124,21 @@ st.write(segment)
 ldata = TimeSeries.fetch_open_data('L1', *segment, verbose=True)
 st.write(ldata)
 
+specgram = ldata.spectrogram(2, fftlength=1, overlap=.5)**(1/2.)
+
+plot = specgram.imshow(norm='log', vmin=5e-24, vmax=1e-19)
+ax = plot.gca()
+ax.set_yscale('log')
+ax.set_ylim(10, 2000)
+ax.colorbar(
+    label=r'Gravitational-wave amplitude'
+)
+
+st.pyplot(plot)
+
+#Fix errors
+#startup gps error
+#set up detector selector
+#detector error
+#presistance issue with graph
+#missing total mass 
