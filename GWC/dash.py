@@ -10,6 +10,9 @@ import warnings
 warnings.filterwarnings('ignore')
 from PIL import Image
 import altair as alt
+import pycbc
+from pycbc.waveform import get_td_waveform, fd_approximants
+import pylab
 
 #other imports
 import matplotlib.pyplot as plt
@@ -147,6 +150,11 @@ if selected_gwc_event:
     gps_info = event_gps(event_name)
     if gps_info:
         st.write("GPS Information:", gps_info)
+        selected_data = df[df['commonName'] == event_name]
+        if not selected_data.empty:
+            mass_1 = selected_data['mass_1_source'].values[0]
+            mass_2 = selected_data['mass_2_source'].values[0]
+            dist = selected_data['luminosity_distance'].values[0]
     else:
         st.write("GPS Information not available for the selected event.")
 else:
@@ -156,6 +164,26 @@ detectorlist = ['H1', 'L1', 'V1']
 detector = st.selectbox("Pick the Detector", detectorlist)
 st.write('Detector: ', detector)
 
+#generate waveform
+hp, hc = get_td_waveform(approximant="IMRPhenomD",
+                         mass1=mass_1,
+                         mass2=mass_2,
+                         delta_t=1.0/16384,
+                         f_lower=30,
+                         distance=dist)
+
+#Zoom in near the merger time
+fig = plt.figure(figsize=pylab.figaspect(0.4))
+plt.plot(hp.sample_times, hp, label='Plus Polarization')
+plt.plot(hp.sample_times, hc, label='Cross Polarization')
+plt.xlabel('Time (s)')
+plt.ylabel('Strain')
+plt.xlim(-.01, .01)
+plt.legend()
+plt.grid()
+
+st.write(fig)
+
 #print timeseries and gps info to confirm
 segment = (int(gps_info)-5, int(gps_info)+5)
 st.write(segment)
@@ -163,6 +191,7 @@ st.write(segment)
 ldata = TimeSeries.fetch_open_data(detector, *segment, verbose=True)
 st.write(ldata)
 
+#Spectrogram to confirm data is feeding through
 specgram = ldata.spectrogram(2, fftlength=1, overlap=.5)**(1/2.)
 
 plot = specgram.imshow(norm='log', vmin=5e-24, vmax=1e-19)
@@ -175,11 +204,11 @@ ax.colorbar(
 
 st.pyplot(plot)
 
-
 #--Add
 #toggle between confirmed and marginal
 
 #--Fix errors
+#missing mass
 #startup gps error
 #detector error
 #presistance issue with graph
