@@ -60,6 +60,11 @@ def get_data() -> pd.DataFrame:
 old_df = get_data()
 
 #add missing mass values
+old_df["mass_1_source"].fillna(0, inplace=True)
+old_df["mass_1_source"] = old_df["mass_1_source"].astype(int)
+old_df["mass_2_source"].fillna(0, inplace=True)
+old_df["mass_2_source"] = old_df["mass_2_source"].astype(int)
+
 old_df['total_mass_source'] = old_df['mass_1_source'] + old_df['mass_2_source']
 
 old_df.to_excel('updated_GWTC.xlsx', index=False)
@@ -198,14 +203,10 @@ plt.xlim(-.01, .01)
 plt.legend()
 plt.grid()
 
-st.write(wave)
-
 #print timeseries and gps info to confirm
 segment = (int(gps_info)-5, int(gps_info)+5)
 
 ldata = TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
-
-st.write(ldata)
 
 #Spectrogram to confirm data is feeding through
 specgram = ldata.spectrogram(2, fftlength=1, overlap=.5)**(1/2.)
@@ -218,7 +219,14 @@ ax.colorbar(
     label=r'Gravitational-wave amplitude'
 )
 
-st.pyplot(plot)
+col7, col8 = st.columns(2)
+
+col7.write(wave, use_container_width=True)
+
+col8.pyplot(plot, use_container_width=True)
+
+
+
 #--Add
 #toggle between confirmed and marginal
 #pie chart of BNS/NSBH/BBH
