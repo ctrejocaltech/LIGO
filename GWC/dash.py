@@ -9,7 +9,7 @@ import altair as alt
 import pycbc
 from pycbc.waveform import get_td_waveform, fd_approximants
 import pylab
-
+import openpyxl
 
 #other imports
 import matplotlib.pyplot as plt
