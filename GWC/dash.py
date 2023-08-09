@@ -3,16 +3,13 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 from streamlit_plotly_events import plotly_events
-from streamlit_elements import elements, mui, html
-from streamlit_elements import dashboard
 import plotly.graph_objects as go
-import warnings
-warnings.filterwarnings('ignore')
 from PIL import Image
 import altair as alt
 import pycbc
 from pycbc.waveform import get_td_waveform, fd_approximants
 import pylab
+import openpyxl
 
 #other imports
 import matplotlib.pyplot as plt
@@ -48,23 +45,31 @@ _lock = RendererAgg.lock
 
 
 # --Set page config
-apptitle = 'GWD Global View'
+apptitle = 'GWTC Global View'
 
 st.set_page_config(page_title=apptitle, layout="wide")
 
 #Title the app
-st.title('GWD Dashboard')
+st.title('GWTC Dashboard')
 
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
 def get_data() -> pd.DataFrame:
     return pd.read_csv("https://gwosc.org/eventapi/csv/GWTC/")
 
-df = get_data()
+old_df = get_data()
+
+#add missing mass values
+old_df['total_mass_source'] = old_df['mass_1_source'] + old_df['mass_2_source']
+
+old_df.to_excel('updated_GWTC.xlsx', index=False)
+
+updated_excel = 'updated_GWTC.xlsx'
+
+df = pd.read_excel(updated_excel)
 
 #num of unique events
 count = df.commonName.unique().size
-
 
 #mass chart for Dashboard
 mass_chart = alt.Chart(df, title="Mass 1 vs Mass 2").mark_circle().encode(
@@ -96,7 +101,7 @@ col1.metric(label="Total Observations to Date",
 
 col2.metric(
     label="Total Obvs Time",
-    value=("test"),
+    value=("Get Value"),
 )
 
 col3.metric(
@@ -113,13 +118,22 @@ col5.altair_chart(dist, use_container_width=True)
 
 col6.altair_chart(snr, use_container_width=True)
 
+st.markdown('### Select an event, default is GW150914')
 
+#set default event
+default_event = "GW150914"
+selected_gwc_event = [default_event]
 
-st.markdown('### Select an event')
-#create chart
+#create s
 event_chart = px.scatter(df, x="total_mass_source", y="commonName")
 
+event_chart.update_traces(
+    marker=dict(size=15, symbol="circle-dot"),
+)
+
 event_chart.update_layout(
+    hovermode='y',
+    autosize=True,
     xaxis_title="Total Mass",
     yaxis_title="Event",
     yaxis=dict(
@@ -132,14 +146,16 @@ event_chart.update_xaxes(range=[0,200],
     title_font = {"size": 20},
     title_standoff = 20,
 )
-event_chart.update_yaxes(range=[0,20],
+event_chart.update_yaxes(range=[-1,18],
     title_font = {"size": 20},
     title_standoff = 50,
+    
 )
 
 #get user input
 select_event = plotly_events(event_chart, click_event=True)
-selected_gwc_event = [point['y'] for point in select_event]
+if select_event:
+    selected_gwc_event = [point['y'] for point in select_event]
 
 # Display the selected points
 st.write("Selected Event:", selected_gwc_event)
@@ -173,7 +189,7 @@ hp, hc = get_td_waveform(approximant="IMRPhenomD",
                          distance=dist)
 
 #Zoom in near the merger time
-fig = plt.figure(figsize=pylab.figaspect(0.4))
+wave = plt.figure(figsize=pylab.figaspect(0.4))
 plt.plot(hp.sample_times, hp, label='Plus Polarization')
 plt.plot(hp.sample_times, hc, label='Cross Polarization')
 plt.xlabel('Time (s)')
@@ -182,13 +198,13 @@ plt.xlim(-.01, .01)
 plt.legend()
 plt.grid()
 
-st.write(fig)
+st.write(wave)
 
 #print timeseries and gps info to confirm
 segment = (int(gps_info)-5, int(gps_info)+5)
-st.write(segment)
 
-ldata = TimeSeries.fetch_open_data(detector, *segment, verbose=True)
+ldata = TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
+
 st.write(ldata)
 
 #Spectrogram to confirm data is feeding through
@@ -203,12 +219,11 @@ ax.colorbar(
 )
 
 st.pyplot(plot)
-
 #--Add
 #toggle between confirmed and marginal
+#pie chart of BNS/NSBH/BBH
 
 #--Fix errors
-#missing mass
 #startup gps error
 #detector error
 #presistance issue with graph
