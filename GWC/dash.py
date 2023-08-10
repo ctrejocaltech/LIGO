@@ -100,7 +100,7 @@ source = pd.DataFrame(
     {"Merger Type": ["BNS", "NSBH", "BBH"], "Value": [20, 40, 60]}
 )
 
-alt.Chart(source).mark_arc(innerRadius=75).encode(
+base = alt.Chart(source).mark_arc(innerRadius=75).encode(
     theta = alt.Theta(field="Value", type="quantitaive"),
     color = alt.Color(field="Merger Type", type="nominal"),
 )
@@ -123,7 +123,7 @@ col2.metric(
 expdr = col2.expander('Show more info in column!')
 expdr.write('More info!')
 
-col3.altair_chart(alt, use_container_width=True)
+col3.altair_chart(base, use_container_width=True)
 expdr = col3.expander('Show more info in column!')
 expdr.write('More info!')
 
