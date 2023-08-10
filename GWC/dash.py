@@ -101,10 +101,9 @@ source = pd.DataFrame(
 )
 
 base = alt.Chart(source).mark_arc(innerRadius=75).encode(
-    alt.Theta("Value:Q").stack(True),
-    alt.Color("Merger Type:N").legend()
+    theta = alt.Theta(field="Value", type="quantitaive"),
+    color = alt.Color(field="Merger Type", type="nominal").legend()
 )
-
 
 #Top Dashboard Elements
 st.markdown('### Metrics')
