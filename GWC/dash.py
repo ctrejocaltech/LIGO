@@ -95,33 +95,54 @@ dist = alt.Chart(df, title="Histogram of Distance").mark_bar().encode(
     y=alt.Y('count()', title='Count')
 )
 
+#pie chart breakdown
+source = pd.DataFrame(
+    {"Merger Type": ["BNS", "NSBH", "BBH"], "Value": [20, 40, 60]}
+)
+
+base = alt.Chart(source).mark_arc(innerRadius=75).encode(
+    alt.Theta("Value:Q").stack(True),
+    alt.Color("Merger Type:N").legend()
+)
+
+
 #Top Dashboard Elements
 st.markdown('### Metrics')
 
 col1, col2, col3 = st.columns(3)
 
 col1.metric(label="Total Observations to Date",
-    value=(count),
+    value=(count),    
 )
+expdr = col1.expander('Show more info in column!')
+expdr.write('More info!')
 
 col2.metric(
     label="Total Obvs Time",
     value=("Get Value"),
 )
+expdr = col2.expander('Show more info in column!')
+expdr.write('More info!')
 
-col3.metric(
-    label="Current Run",
-    value=("O4") 
-)
+col3.altair_chart(base, use_container_width=True)
+expdr = col3.expander('Show more info in column!')
+expdr.write('More info!')
 
 #second row of columns
 col4, col5, col6 = st.columns(3)
 
 col4.altair_chart(mass_chart, use_container_width=True)
+expdr = col4.expander('Show more info in column!')
+expdr.write('More info!')
+
 
 col5.altair_chart(dist, use_container_width=True)
+expdr = col5.expander('Show more info in column!')
+expdr.write('More info!')
 
 col6.altair_chart(snr, use_container_width=True)
+expdr = col6.expander('Show more info in column!')
+expdr.write('More info!')
 
 st.markdown('### Select an event, default is GW150914')
 
@@ -129,7 +150,7 @@ st.markdown('### Select an event, default is GW150914')
 default_event = "GW150914"
 selected_gwc_event = [default_event]
 
-#create s
+#create scatter chart 
 event_chart = px.scatter(df, x="total_mass_source", y="commonName")
 
 event_chart.update_traces(
@@ -225,13 +246,12 @@ col7.write(wave, use_container_width=True)
 
 col8.pyplot(plot, use_container_width=True)
 
-
-
 #--Add
 #toggle between confirmed and marginal
 #pie chart of BNS/NSBH/BBH
 
 #--Fix errors
+#0 mass error
 #startup gps error
 #detector error
 #presistance issue with graph
