@@ -101,7 +101,7 @@ source = pd.DataFrame(
 )
 
 base = alt.Chart(source).mark_arc(innerRadius=75).encode(
-    theta = alt.Theta(field="Value", type="quantitaive"),
+    theta = alt.Theta(field="Value", type="quantitative"),
     color = alt.Color(field="Merger Type", type="nominal"),
 )
 
