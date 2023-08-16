@@ -43,7 +43,6 @@ mpl.use("agg")
 from matplotlib.backends.backend_agg import RendererAgg
 _lock = RendererAgg.lock
 
-
 # --Set page config
 apptitle = 'GWTC Global View'
 
@@ -58,6 +57,10 @@ def get_data() -> pd.DataFrame:
     return pd.read_csv("https://gwosc.org/eventapi/csv/GWTC/")
 
 old_df = get_data()
+
+sub = 'confident'
+
+old_df = old_df[old_df['catalog.shortName'].str.contains('confident', case=False)]
 
 #add missing mass values
 old_df["mass_1_source"].fillna(0, inplace=True)
@@ -77,21 +80,21 @@ df = pd.read_excel(updated_excel)
 count = df.commonName.unique().size
 
 #mass chart for Dashboard
-mass_chart = alt.Chart(df, title="Mass 1 vs Mass 2").mark_circle().encode(
-    x=alt.X('mass_1_source:Q', title='Source of Mass 1'),
-    y=alt.Y('mass_2_source:Q', title='Source of Mass 2'),
-    tooltip=['commonName', 'GPS']
+mass_chart = alt.Chart(df, title="Total Mass Histogram").mark_bar().encode(
+    x=alt.X('total_mass_source:N', title='Total Mass', bin=True),
+    y=alt.Y('count()', title='Count'),
+    #tooltip=['commonName', 'GPS']
 )
 
 #Histogram for SNR
-snr = alt.Chart(df, title="Histogram of Network SNR").mark_bar().encode(
-    x=alt.X('network_matched_filter_snr:Q', title='SNR', bin=True),
+snr = alt.Chart(df, title="Network SNR Histogram").mark_bar().encode(
+    x=alt.X('network_matched_filter_snr:Q', title='SNR'),
     y=alt.Y('count()', title='Count')
 )
 
 #Histogram for Distance
-dist = alt.Chart(df, title="Histogram of Distance").mark_bar().encode(
-    x=alt.X('luminosity_distance:Q', title='Distance in Mpc'),
+dist = alt.Chart(df, title="Distance Histogram").mark_bar().encode(
+    x=alt.X('luminosity_distance:Q', title='Distance in Mpc', bin=alt.Bin(maxbins=10)),
     y=alt.Y('count()', title='Count')
 )
 
@@ -101,8 +104,8 @@ source = pd.DataFrame(
 )
 
 base = alt.Chart(source).mark_arc(innerRadius=75).encode(
-    theta = alt.Theta(field="Value", type="quantitative"),
-    color = alt.Color(field="Merger Type", type="nominal"),
+    alt.Theta("Value:Q").stack(True),
+    alt.Color("Merger Type:N").legend()
 )
 
 #Top Dashboard Elements
@@ -134,7 +137,6 @@ col4.altair_chart(mass_chart, use_container_width=True)
 expdr = col4.expander('Show more info in column!')
 expdr.write('More info!')
 
-
 col5.altair_chart(dist, use_container_width=True)
 expdr = col5.expander('Show more info in column!')
 expdr.write('More info!')
@@ -145,112 +147,123 @@ expdr.write('More info!')
 
 st.markdown('### Select an event, default is GW150914')
 
-#set default event
-default_event = "GW150914"
-selected_gwc_event = [default_event]
-
 #create scatter chart 
-event_chart = px.scatter(df, x="total_mass_source", y="commonName")
+event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", hover_data=["commonName"])
 
 event_chart.update_traces(
-    marker=dict(size=15, symbol="circle-dot"),
+    marker=dict(size=10, symbol="circle-dot"),
 )
-
 event_chart.update_layout(
-    hovermode='y',
-    autosize=True,
-    xaxis_title="Total Mass",
-    yaxis_title="Event",
-    yaxis=dict(
-        tickmode='array',
-        title='Event',  # Set your y-axis title here
-    ),
-    margin=dict(l=150),  # Adjust the left margin value to create more space for the y-axis labels
+   xaxis_title="Mass 1",
+    yaxis_title="Mass 2",
 )
-event_chart.update_xaxes(range=[0,200],
+event_chart.update_xaxes(
     title_font = {"size": 20},
-    title_standoff = 20,
 )
-event_chart.update_yaxes(range=[-1,18],
+event_chart.update_yaxes(
     title_font = {"size": 20},
-    title_standoff = 50,
-    
 )
 
-#get user input
 select_event = plotly_events(event_chart, click_event=True)
+
 if select_event:
-    selected_gwc_event = [point['y'] for point in select_event]
+    # Retrieve clicked x and y values
+    clicked_x = select_event[0]['x']
+    clicked_y = select_event[0]['y']
 
-# Display the selected points
-st.write("Selected Event:", selected_gwc_event)
+    # Find the row in the DataFrame that matches the clicked x and y values
+    selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
 
-# Load GPS information corresponding to the selected event
-if selected_gwc_event:
-    event_name = selected_gwc_event[0]
-    gps_info = event_gps(event_name)
-    if gps_info:
-        st.write("GPS Information:", gps_info)
-        selected_data = df[df['commonName'] == event_name]
-        if not selected_data.empty:
-            mass_1 = selected_data['mass_1_source'].values[0]
-            mass_2 = selected_data['mass_2_source'].values[0]
-            dist = selected_data['luminosity_distance'].values[0]
-    else:
-        st.write("GPS Information not available for the selected event.")
-else:
-    st.write("Select an event by clicking on the plot.")
+    if not selected_row.empty:
+        selected_common_name = selected_row["commonName"].values[0]
+        st.write("Selected Event:", selected_common_name)
+        event_name = selected_common_name
+        gps_info = event_gps(event_name)
+        if gps_info:
+            st.write("GPS Information:", gps_info)
+            mass_1 = selected_row['mass_1_source'].values[0]
+            mass_2 = selected_row['mass_2_source'].values[0]
+            dist = selected_row['luminosity_distance'].values[0]
+        else:
+            st.write("GPS Information not available for the selected event.")
+        
 
 detectorlist = ['H1', 'L1', 'V1']
 detector = st.selectbox("Pick the Detector", detectorlist)
 st.write('Detector: ', detector)
 
-#generate waveform
-hp, hc = get_td_waveform(approximant="IMRPhenomD",
-                         mass1=mass_1,
-                         mass2=mass_2,
-                         delta_t=1.0/16384,
-                         f_lower=30,
-                         distance=dist)
+if select_event:
+    #generate waveform
+    hp, hc = get_td_waveform(approximant="IMRPhenomD",
+                             mass1=mass_1 if 'mass_1' in locals() else default_mass_1,
+                             mass2=mass_2 if 'mass_2' in locals() else default_mass_2,
+                             delta_t=1.0/16384,
+                             f_lower=30,
+                             distance=dist)
 
-#Zoom in near the merger time
-wave = plt.figure(figsize=pylab.figaspect(0.4))
-plt.plot(hp.sample_times, hp, label='Plus Polarization')
-plt.plot(hp.sample_times, hc, label='Cross Polarization')
-plt.xlabel('Time (s)')
-plt.ylabel('Strain')
-plt.xlim(-.01, .01)
-plt.legend()
-plt.grid()
+    #Zoom in near the merger time
+    wave = plt.figure(figsize=pylab.figaspect(0.4))
+    plt.plot(hp.sample_times, hp, label='Plus Polarization')
+    plt.plot(hp.sample_times, hc, label='Cross Polarization')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Strain')
+    plt.xlim(-.5, .5)
+    plt.legend()
+    plt.grid()
 
-#print timeseries and gps info to confirm
-segment = (int(gps_info)-5, int(gps_info)+5)
 
-ldata = TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
+        #get timeseries and gps info to confirm
+    segment = (int(gps_info)-5, int(gps_info)+5)
+    ldata = TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
 
-#Spectrogram to confirm data is feeding through
-specgram = ldata.spectrogram(2, fftlength=1, overlap=.5)**(1/2.)
+    #Q Transform GPS data
+    gps_time_start = st.slider('Select GPS Start Range', -5.0, 0.1, (-1.0))
+    gps_time_end = st.slider('Select GPS End Range', 0.1, 5.0, (1.0))
 
-plot = specgram.imshow(norm='log', vmin=5e-24, vmax=1e-19)
-ax = plot.gca()
-ax.set_yscale('log')
-ax.set_ylim(10, 2000)
-ax.colorbar(
-    label=r'Gravitational-wave amplitude'
-)
+    #st.subheader('Q-transform')
+    t0 = datasets.event_gps(event_name)
+    dtboth = st.slider('Time Range (seconds)', 0.1, 8.0, 1.0)  # min, max, default
+    dt = dtboth / 2.0
+    vmax = st.slider('Colorbar Max Energy', 10, 500, 25)  # min, max, default
+    qcenter = st.slider('Q-value', 5, 120, 5)  # min, max, default
+    qrange = (int(qcenter*0.8), int(qcenter*1.2))
 
-col7, col8 = st.columns(2)
+    hq = ldata.q_transform(outseg=(t0-dt, t0+dt), qrange=qrange)
 
-col7.write(wave, use_container_width=True)
+    with _lock:
+        fig4 = hq.plot()
+        ax = fig4.gca()
+        fig4.colorbar(label="Normalised energy", vmax=vmax, vmin=0)
+        ax.grid(False)
+        ax.set_yscale('log')
+        ax.set_ylim(bottom=15)
+        st.pyplot(fig4, clear_figure=True)
 
-col8.pyplot(plot, use_container_width=True)
+    #Spectrogram to confirm data is feeding through
+    specgram = ldata.spectrogram(2, fftlength=1, overlap=.5)**(1/2.)
+
+    plot = specgram.imshow(norm='log', vmin=5e-24, vmax=1e-19)
+    ax = plot.gca()
+    ax.set_yscale('log')
+    ax.set_ylim(10, 2000)
+    ax.colorbar(
+        label=r'Gravitational-wave amplitude'
+    )
+
+    col7, col8 = st.columns(2)
+
+    col7.write(wave)
+
+    col8.pyplot(plot)
+
+else:
+    st.write("Waiting for user to click on event...")
+
+
+
 
 #--Add
-#toggle between confirmed and marginal
-#pie chart of BNS/NSBH/BBH
 
 #--Fix errors
-#0 mass error
 #startup gps error
 #detector error
-#presistance issue with graph
