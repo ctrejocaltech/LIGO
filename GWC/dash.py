@@ -123,7 +123,7 @@ col1.metric(
     label="Select a Catalog",
     value=("Get Value"),
 )
-expdr = col2.expander('Show more info in column!')
+expdr = col1.expander('Show more info in column!')
 expdr.write('More info!')
 
 col3.altair_chart(base, use_container_width=True)
