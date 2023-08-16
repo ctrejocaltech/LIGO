@@ -189,8 +189,7 @@ if select_event:
         
 
 detectorlist = ['H1', 'L1', 'V1']
-detector = st.selectbox("Pick the Detector", detectorlist)
-st.write('Detector: ', detector)
+detector = st.selectbox("Select a Detector", detectorlist)
 
 if select_event:
     #generate waveform
