@@ -116,7 +116,7 @@ col1, col2, col3 = st.columns(3)
 col2.metric(label="Total Observations to Date",
     value=(count),    
 )
-expdr = col1.expander('Show more info in column!')
+expdr = col2.expander('Show more info in column!')
 expdr.write('More info!')
 
 col1.metric(
