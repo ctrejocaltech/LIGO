@@ -104,7 +104,7 @@ source = pd.DataFrame(
 )
 
 base = alt.Chart(source).mark_arc(innerRadius=75).encode(
-    theta = "value:Q",
+    theta = "value:N",
     color = "category:N",
 )
 
