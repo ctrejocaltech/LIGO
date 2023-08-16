@@ -113,14 +113,14 @@ st.markdown('### Metrics')
 
 col1, col2, col3 = st.columns(3)
 
-col1.metric(label="Total Observations to Date",
+col2.metric(label="Total Observations to Date",
     value=(count),    
 )
 expdr = col1.expander('Show more info in column!')
 expdr.write('More info!')
 
-col2.metric(
-    label="Total Obvs Time",
+col1.metric(
+    label="Select a Catalog",
     value=("Get Value"),
 )
 expdr = col2.expander('Show more info in column!')
