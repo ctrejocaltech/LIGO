@@ -104,8 +104,8 @@ source = pd.DataFrame(
 )
 
 base = alt.Chart(source).mark_arc(innerRadius=75).encode(
-    theta = "value",
-    color = "category",
+    theta = "value:Q",
+    color = "category:N",
 )
 
 #Top Dashboard Elements
