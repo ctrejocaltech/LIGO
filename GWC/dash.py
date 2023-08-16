@@ -104,8 +104,8 @@ source = pd.DataFrame(
 )
 
 base = alt.Chart(source).mark_arc(innerRadius=75).encode(
-    theta = alt.Theta("Value:Q").stack(True),
-    color = alt.Color("Merger Type:N").legend()
+    theta = "value",
+    color = "category"
 )
 
 #Top Dashboard Elements
