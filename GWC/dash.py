@@ -4,12 +4,12 @@ import plotly.express as px
 import streamlit as st
 from streamlit_plotly_events import plotly_events
 import plotly.graph_objects as go
-from PIL import Image
 import altair as alt
 import pycbc
 from pycbc.waveform import get_td_waveform, fd_approximants
 import pylab
 import openpyxl
+
 
 #other imports
 import matplotlib.pyplot as plt
@@ -42,6 +42,7 @@ mpl.use("agg")
 ##############################################################################
 from matplotlib.backends.backend_agg import RendererAgg
 _lock = RendererAgg.lock
+
 
 # --Set page config
 apptitle = 'GWTC Global View'
@@ -76,8 +77,36 @@ updated_excel = 'updated_GWTC.xlsx'
 
 df = pd.read_excel(updated_excel)
 
+## -- DATA FOR CHARTS
+
 #num of unique events
 count = df.commonName.unique().size
+## expand to sort by catalog name or type
+
+# Sort mass for event type distribution
+def categorize_event(row):
+    if row['mass_1_source'] < 3 and row['mass_2_source'] < 3:
+        return 'BNS'
+    elif row['mass_1_source'] >= 3 and row['mass_2_source'] >= 3:
+        return 'BBH'
+    else:
+        return 'NSBH'
+
+df['Event'] = df.apply(categorize_event, axis=1)
+
+# Group data by event type and count occurrences
+grouped_df = df.groupby('Event').size().reset_index(name='Count')
+
+# Create the pie chart
+pie_chart = alt.Chart(grouped_df).mark_arc().encode(
+    theta=alt.Theta(field='Count', type='quantitative'),
+    color=alt.Color(field='Event', type='nominal'),
+    tooltip=['Event', 'Count']
+).properties(
+    width=300,
+    height=300,
+    title='Event Type Distribution'
+)
 
 #mass chart for Dashboard
 mass_chart = alt.Chart(df, title="Total Mass Histogram").mark_bar().encode(
@@ -88,7 +117,7 @@ mass_chart = alt.Chart(df, title="Total Mass Histogram").mark_bar().encode(
 
 #Histogram for SNR
 snr = alt.Chart(df, title="Network SNR Histogram").mark_bar().encode(
-    x=alt.X('network_matched_filter_snr:Q', title='SNR'),
+    x=alt.X('network_matched_filter_snr:Q', title='SNR', bin=True),
     y=alt.Y('count()', title='Count')
 )
 
@@ -98,19 +127,10 @@ dist = alt.Chart(df, title="Distance Histogram").mark_bar().encode(
     y=alt.Y('count()', title='Count')
 )
 
-#pie chart breakdown
-source = pd.DataFrame(
-    {"Merger Type": ["BNS", "NSBH", "BBH"], "Value": [20, 40, 60]}
-)
-
-base = alt.Chart(source).mark_arc(innerRadius=75).encode(
-    theta = "Value:N",
-    color = "Merger Type:N",
-)
-
 #Top Dashboard Elements
 st.markdown('### Metrics')
 
+#FIRST ROW COLUMNS
 col1, col2, col3 = st.columns(3)
 
 col2.metric(label="Total Observations to Date",
@@ -126,11 +146,11 @@ col1.metric(
 expdr = col1.expander('Show more info in column!')
 expdr.write('More info!')
 
-col3.altair_chart(base, use_container_width=True)
+col3.altair_chart(pie_chart, use_container_width=True)
 expdr = col3.expander('Show more info in column!')
 expdr.write('More info!')
 
-#second row of columns
+#SECOND ROW COLUMNS
 col4, col5, col6 = st.columns(3)
 
 col4.altair_chart(mass_chart, use_container_width=True)
@@ -145,13 +165,17 @@ col6.altair_chart(snr, use_container_width=True)
 expdr = col6.expander('Show more info in column!')
 expdr.write('More info!')
 
-st.markdown('### Select an event, default is GW150914')
+st.markdown('### Select an event to learn more')
 
-#create scatter chart 
-event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", hover_data=["commonName"])
+#MAIN CHART FOR USER INPUT
+event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="total_mass_source", color_continuous_scale = "darkmint", hover_data=["commonName"])
 
 event_chart.update_traces(
-    marker=dict(size=10, symbol="circle-dot"),
+    marker=dict(size=10,
+    symbol="circle-dot",
+    colorscale="Viridis",
+    showscale=True
+    )
 )
 event_chart.update_layout(
    xaxis_title="Mass 1",
@@ -184,20 +208,24 @@ if select_event:
             mass_1 = selected_row['mass_1_source'].values[0]
             mass_2 = selected_row['mass_2_source'].values[0]
             dist = selected_row['luminosity_distance'].values[0]
+            total_mass_source = selected_row['total_mass_source'].values[0]
         else:
             st.write("GPS Information not available for the selected event.")
-        
 
+
+#have users select a detector
 detectorlist = ['H1', 'L1', 'V1']
 detector = st.selectbox("Select a Detector", detectorlist)
+## need to update to prevent error if detector is not available 
 
+#CHARTS WITH USER INPUT
 if select_event:
     #generate waveform
     hp, hc = get_td_waveform(approximant="IMRPhenomD",
-                             mass1=mass_1 if 'mass_1' in locals() else default_mass_1,
-                             mass2=mass_2 if 'mass_2' in locals() else default_mass_2,
+                             mass1=mass_1,
+                             mass2=mass_2,
                              delta_t=1.0/16384,
-                             f_lower=30,
+                             f_lower=45,
                              distance=dist)
 
     #Zoom in near the merger time
@@ -210,16 +238,95 @@ if select_event:
     plt.legend()
     plt.grid()
 
+    ##Gauge Indicators
+    total_mass = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = total_mass_source,
+    title = {'text': "Total Mass"},
+    gauge = {'axis': {'range': [None, 200]},
+             'bar': {'color': "lightskyblue"},
+             'bgcolor': "white",
+             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 181}},
+    domain = {'x': [0, 1], 'y': [0, 1]}
+    ))
 
-        #get timeseries and gps info to confirm
+    total_mass.update_layout(
+        autosize=False,
+        width=400,
+        height=400,
+)
+    lum_dist = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = dist,
+    title = {'text': "Luminosity Distance"},
+    gauge = {'axis': {'range': [None, 10000]},
+             'bar': {'color': "lightskyblue"},
+             'bgcolor': "white",
+             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 8280}},
+    domain = {'x': [0, 1], 'y': [0, 1]}
+    ))
+
+    lum_dist.update_layout(
+        autosize=False,
+        width=400,
+        height=400,
+)
+
+    col7, col8 = st.columns(2)
+
+    col7.write(total_mass)
+
+    col8.write(lum_dist)
+
+    m1 = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = mass_1,
+    title = {'text': "Mass of source 1"},
+    gauge = {'axis': {'range': [None, 200]},
+             'bar': {'color': "lightskyblue"},
+             'bgcolor': "white",
+             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 105}},
+    domain = {'x': [0, 1], 'y': [0, 1]}
+    ))
+
+    m1.update_layout(
+        autosize=False,
+        width=400,
+        height=400,
+)
+
+    m2 = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = mass_2,
+    title = {'text': "Mass of source 2"},
+    gauge = {'axis': {'range': [None, 200]},
+             'bar': {'color': "lightskyblue"},
+             'bgcolor': "white",
+             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 76}},
+    domain = {'x': [0, 1], 'y': [0, 1]}
+    ))
+
+    m2.update_layout(
+        autosize=False,
+        width=400,
+        height=400,
+)
+
+    col9, col10 = st.columns(2)
+
+    col9.write(m1)
+
+    col10.write(m2)
+
+    #get timeseries and gps info to confirm
     segment = (int(gps_info)-5, int(gps_info)+5)
     ldata = TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
 
-    #Q Transform GPS data
+    #Q Transform GPS data slider
     gps_time_start = st.slider('Select GPS Start Range', -5.0, 0.1, (-1.0))
     gps_time_end = st.slider('Select GPS End Range', 0.1, 5.0, (1.0))
 
-    #st.subheader('Q-transform')
+    st.subheader('Q-transform')
     t0 = datasets.event_gps(event_name)
     dtboth = st.slider('Time Range (seconds)', 0.1, 8.0, 1.0)  # min, max, default
     dt = dtboth / 2.0
@@ -249,11 +356,12 @@ if select_event:
         label=r'Gravitational-wave amplitude'
     )
 
-    col7, col8 = st.columns(2)
+    col11, col12 = st.columns(2)
 
-    col7.write(wave)
+    col11.write(wave)
 
-    col8.pyplot(plot)
+    col12.pyplot(plot)
+
 
 else:
     st.write("Waiting for user to click on event...")
@@ -264,5 +372,4 @@ else:
 #--Add
 
 #--Fix errors
-#startup gps error
-#detector error
+#Detector Error
