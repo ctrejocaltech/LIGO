@@ -9,7 +9,7 @@ import pycbc
 from pycbc.waveform import get_td_waveform, fd_approximants
 import pylab
 import openpyxl
-
+import requests
 
 #other imports
 import matplotlib.pyplot as plt
@@ -50,38 +50,55 @@ apptitle = 'GWTC Global View'
 st.set_page_config(page_title=apptitle, layout="wide")
 
 #Title the app
-st.title('GWTC Dashboard')
+st.title('Gravitational-wave Transient Catalog Dashboard')
+
+#Top Dashboard Elements
+st.markdown('### Metrics')
 
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
-def get_data() -> pd.DataFrame:
-    return pd.read_csv("https://gwosc.org/eventapi/csv/GWTC/")
+def load_and_group_data():
+    df = pd.read_csv("https://gwosc.org/eventapi/csv/allevents/")
+    
+    catalogs = ['GWTC', 'GWTC-1-confident', 'GWTC-2', 'GWTC-2.1-confident', 'GWTC-3-confident', 'O3_Discovery_Papers']
+    
+    grouped_data = {}
+    
+    for catalog in catalogs:
+        event_data = df[(df['catalog.shortName'] == catalog)]
+        grouped_data[catalog] = event_data
 
-old_df = get_data()
+    return grouped_data
 
-sub = 'confident'
+grouped_data = load_and_group_data()
+col1, col2, col3 = st.columns(3)
 
-old_df = old_df[old_df['catalog.shortName'].str.contains('confident', case=False)]
+with col1:
+    selected_event = st.selectbox('Select Event (Defaults to GWTC)', grouped_data.keys())
+    if selected_event in grouped_data:
+        event_df = grouped_data[selected_event]
+    
+        # Filter for 'GWTC' catalog
+        if selected_event == 'GWTC':
+            event_df = event_df[event_df['catalog.shortName'].str.contains('confident', case=False)]
 
-#add missing mass values
-old_df["mass_1_source"].fillna(0, inplace=True)
-old_df["mass_1_source"] = old_df["mass_1_source"].astype(int)
-old_df["mass_2_source"].fillna(0, inplace=True)
-old_df["mass_2_source"] = old_df["mass_2_source"].astype(int)
+col1.write('Select an Event Catalog to learn more about each individual release')
 
-old_df['total_mass_source'] = old_df['mass_1_source'] + old_df['mass_2_source']
 
-old_df.to_excel('updated_GWTC.xlsx', index=False)
+event_df['total_mass_source'] = event_df['mass_1_source'] + event_df['mass_2_source']
+
+event_df.to_excel('updated_GWTC.xlsx', index=False)
 
 updated_excel = 'updated_GWTC.xlsx'
 
 df = pd.read_excel(updated_excel)
 
-## -- DATA FOR CHARTS
+count = event_df.commonName.unique().size
 
-#num of unique events
-count = df.commonName.unique().size
-## expand to sort by catalog name or type
+col2.metric(label="Total Observations in this Catalog",
+    value=(count),    
+)
+col2.write('The number of observations in this run that contain information about the source mass for both objects')
 
 # Sort mass for event type distribution
 def categorize_event(row):
@@ -108,6 +125,10 @@ pie_chart = alt.Chart(grouped_df).mark_arc().encode(
     title='Event Type Distribution'
 )
 
+col3.altair_chart(pie_chart, use_container_width=True)
+expdr = col3.expander('Breakdown of the type of events we have detected so far')
+expdr.write('BBH are Binary Black Hole Mergers, BNS are Binary Nutron Star Mergers and NSBH is a merger between a black hole and a nutron star')
+
 #mass chart for Dashboard
 mass_chart = alt.Chart(df, title="Total Mass Histogram").mark_bar().encode(
     x=alt.X('total_mass_source:N', title='Total Mass', bin=True),
@@ -127,28 +148,6 @@ dist = alt.Chart(df, title="Distance Histogram").mark_bar().encode(
     y=alt.Y('count()', title='Count')
 )
 
-#Top Dashboard Elements
-st.markdown('### Metrics')
-
-#FIRST ROW COLUMNS
-col1, col2, col3 = st.columns(3)
-
-col2.metric(label="Total Observations to Date",
-    value=(count),    
-)
-expdr = col2.expander('Show more info in column!')
-expdr.write('More info!')
-
-col1.metric(
-    label="Select a Catalog",
-    value=("Get Value"),
-)
-expdr = col1.expander('Show more info in column!')
-expdr.write('More info!')
-
-col3.altair_chart(pie_chart, use_container_width=True)
-expdr = col3.expander('Show more info in column!')
-expdr.write('More info!')
 
 #SECOND ROW COLUMNS
 col4, col5, col6 = st.columns(3)
@@ -168,26 +167,36 @@ expdr.write('More info!')
 st.markdown('### Select an event to learn more')
 
 #MAIN CHART FOR USER INPUT
-event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="total_mass_source", color_continuous_scale = "darkmint", hover_data=["commonName"])
+event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
+    "network_matched_filter_snr": "Network SNR",
+    "commonName": "Name",
+    "mass_1_source": "Mass 1",
+    "mass_2_source": "Mass 2", 
+
+}, title= "Event Catalog", color_continuous_scale = "magenta", hover_data=["commonName"])
 
 event_chart.update_traces(
     marker=dict(size=10,
-    symbol="circle-dot",
-    colorscale="Viridis",
-    showscale=True
+    symbol="circle",
     )
 )
 event_chart.update_layout(
+    hovermode='closest',
+    width=900,
+    height=450,
    xaxis_title="Mass 1",
-    yaxis_title="Mass 2",
+   yaxis_title="Mass 2",
 )
 event_chart.update_xaxes(
-    title_font = {"size": 20},
+    title_standoff=10,
+    title_font = {"size": 15},
 )
 event_chart.update_yaxes(
-    title_font = {"size": 20},
+    title_standoff=10,
+    title_font = {"size": 15},
 )
 
+#User Selection
 select_event = plotly_events(event_chart, click_event=True)
 
 if select_event:
@@ -200,8 +209,9 @@ if select_event:
 
     if not selected_row.empty:
         selected_common_name = selected_row["commonName"].values[0]
-        st.write("Selected Event:", selected_common_name)
         event_name = selected_common_name
+        st.markdown('### Selected Event:')
+        st.markdown(event_name)
         gps_info = event_gps(event_name)
         if gps_info:
             st.write("GPS Information:", gps_info)
@@ -212,11 +222,6 @@ if select_event:
         else:
             st.write("GPS Information not available for the selected event.")
 
-
-#have users select a detector
-detectorlist = ['H1', 'L1', 'V1']
-detector = st.selectbox("Select a Detector", detectorlist)
-## need to update to prevent error if detector is not available 
 
 #CHARTS WITH USER INPUT
 if select_event:
@@ -317,6 +322,11 @@ if select_event:
     col9.write(m1)
 
     col10.write(m2)
+
+    #have users select a detector
+    detectorlist = ['H1', 'L1', 'V1']
+    detector = st.selectbox("Select a Detector", detectorlist)
+    ## need to update to prevent error if detector is not available 
 
     #get timeseries and gps info to confirm
     segment = (int(gps_info)-5, int(gps_info)+5)
