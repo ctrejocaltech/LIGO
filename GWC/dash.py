@@ -43,10 +43,8 @@ mpl.use("agg")
 from matplotlib.backends.backend_agg import RendererAgg
 _lock = RendererAgg.lock
 
-
 # --Set page config
 apptitle = 'GWTC Global View'
-
 st.set_page_config(page_title=apptitle, layout="wide")
 
 #Title the app
@@ -65,36 +63,41 @@ def load_and_group_data():
     grouped_data = {}
     
     for catalog in catalogs:
-        event_data = df[(df['catalog.shortName'] == catalog)]
+        if catalog == 'GWTC':
+            event_data = df[df['catalog.shortName'].str.contains('confident', case=False)]
+            #event_data = df[(df['catalog.shortName'] == catalog) & (df['catalog.shortName'].str.contains('confident', case=False))]
+        else:
+            event_data = df[(df['catalog.shortName'] == catalog)]
         grouped_data[catalog] = event_data
 
     return grouped_data
 
 grouped_data = load_and_group_data()
+
+#create top row columns for selectbox and charts
 col1, col2, col3 = st.columns(3)
 
 with col1:
     selected_event = st.selectbox('Select Event (Defaults to GWTC)', grouped_data.keys())
     if selected_event in grouped_data:
         event_df = grouped_data[selected_event]
-    
-        # Filter for 'GWTC' catalog
-        if selected_event == 'GWTC':
-            event_df = event_df[event_df['catalog.shortName'].str.contains('confident', case=False)]
 
 col1.write('Select an Event Catalog to learn more about each individual release')
 
-
+#fix missing mass issue
 event_df['total_mass_source'] = event_df['mass_1_source'] + event_df['mass_2_source']
 
 event_df.to_excel('updated_GWTC.xlsx', index=False)
 
 updated_excel = 'updated_GWTC.xlsx'
 
+#loads df to use for the rest of the charts
 df = pd.read_excel(updated_excel)
 
+#count for total obvs 
 count = event_df.commonName.unique().size
 
+#
 col2.metric(label="Total Observations in this Catalog",
     value=(count),    
 )
