@@ -22,7 +22,7 @@ from helper import make_audio_file
 # Use the non-interactive Agg backend, which is recommended as a
 # thread-safe backend.
 # See https://matplotlib.org/3.3.2/faq/howto_faq.html#working-with-threads.
-import matplotlib as mpl
+import matplotlib as mpl                
 mpl.use("agg")
 
 ##############################################################################
@@ -169,6 +169,23 @@ fftamp = lwin.fft().abs()
 with _lock:
     fig5 = fftamp.plot(xscale="log", yscale="log")
     st.pyplot(fig5, clear_figure=True)
+
+
+#--Make a ASD Plot
+
+fft = strain_data.fft()
+
+window = get_window('hann', strain_data.size)
+lwin = strain_data*window
+
+fftamp = lwin.fft().abs()
+
+asd = strain_data.asd(fftlength=2, method="median")
+
+with _lock:
+    fig6 = asd.plot(xscale="log", yscale="log")
+    st.pyplot(fig6, clear_figure=True)
+
 
 
 
