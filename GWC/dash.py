@@ -66,7 +66,6 @@ def load_and_group_data():
     for catalog in catalogs:
         if catalog == 'GWTC':
             event_data = df[df['catalog.shortName'].str.contains('confident', case=False)]
-            #event_data = df[(df['catalog.shortName'] == catalog) & (df['catalog.shortName'].str.contains('confident', case=False))]
         else:
             event_data = df[(df['catalog.shortName'] == catalog)]
         grouped_data[catalog] = event_data
@@ -92,26 +91,25 @@ event_df.to_excel('updated_GWTC.xlsx', index=False)
 
 updated_excel = 'updated_GWTC.xlsx'
 
-#loads df to use for the rest of the charts
+# Loads df to use for the rest of the dash
 df = pd.read_excel(updated_excel)
 
-#count for total obvs 
+# Count for total observations 
 count = event_df.commonName.unique().size
 
-#
 col2.metric(label="Total Observations in this Catalog",
     value=(count),    
 )
-col2.write('The number of observations in this run that contain information about the source mass for both objects')
+col2.write('The observations shown contain information for the mass of both sources')
 
 # Sort mass for event type distribution
 def categorize_event(row):
     if row['mass_1_source'] < 3 and row['mass_2_source'] < 3:
-        return 'BNS'
+        return 'Binary Neutron Star'
     elif row['mass_1_source'] >= 3 and row['mass_2_source'] >= 3:
-        return 'BBH'
+        return 'Binary Black Hole'
     else:
-        return 'NSBH'
+        return 'Neutron Star Black Hole'
 
 # sourcery skip: assign-if-exp
 df['Event'] = df.apply(categorize_event, axis=1)
@@ -127,7 +125,7 @@ pie_chart = alt.Chart(grouped_df).mark_arc().encode(
 ).properties(
     width=300,
     height=300,
-    title='Event Type Distribution'
+    title='Merger Type Distribution'
 )
 
 col3.altair_chart(pie_chart, use_container_width=True)
@@ -205,10 +203,11 @@ event_chart.update_yaxes(
 
 expander = st.expander("See for more info!")
 expander.write(
-    'The chart above shows some numbers I picked for you.')
+    'Info about the Chart')
 
 #User Selection
 select_event = plotly_events(event_chart, click_event=True)
+selected_event_name = st.text_input("Enter Event Name:", "")
 
 if select_event:
     # Retrieve clicked x and y values
@@ -221,8 +220,7 @@ if select_event:
     if not selected_row.empty:
         selected_common_name = selected_row["commonName"].values[0]
         event_name = selected_common_name
-        st.markdown('### Selected Event:')
-        st.markdown(event_name)
+        st.markdown('### Selected Event: ' + event_name)
         gps_info = event_gps(event_name)
         if gps_info:
             st.write("GPS Information:", gps_info)
@@ -230,6 +228,7 @@ if select_event:
             mass_2 = selected_row['mass_2_source'].values[0]
             dist = selected_row['luminosity_distance'].values[0]
             total_mass_source = selected_row['total_mass_source'].values[0]
+            snr = selected_row['network_matched_filter_snr'].values[0]
         else:
             st.write("GPS Information not available for the selected event.")
 
@@ -269,14 +268,14 @@ if select_event:
 
     total_mass.update_layout(
         autosize=False,
-        width=400,
-        height=400,
+        width=300,
+        height=300,
     )
     lum_dist = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = dist,
     number = {"suffix": "(Mpc)"},
-    title = {'text': "Luminosity Distance (Mpc)"},
+    title = {'text': "Luminosity Distance <sub>(Mpc)</sub>"},
     gauge = {'axis': {'range': [None, 10000]},
              'bar': {'color': "lightskyblue"},
              'bgcolor': "white",
@@ -286,21 +285,10 @@ if select_event:
 
     lum_dist.update_layout(
         autosize=False,
-        width=400,
-        height=400,
+        width=300,
+        height=300,
     )
-    #Second column for gauges
-    col7, col8 = st.columns(2)
-
-    col7.write(total_mass)
-    expdr = col7.expander('Show more info in column!')
-    expdr.write('More info!')
-
-    col8.write(lum_dist)
-    expdr = col8.expander('Show more info in column!')
-    expdr.write('More info!')
-
-    #gauge for mass1
+    
     m1 = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = mass_1,
@@ -315,8 +303,8 @@ if select_event:
 
     m1.update_layout(
         autosize=False,
-        width=400,
-        height=400,
+        width=300,
+        height=300,
     )
     #gauge for mass2
     m2 = go.Figure(go.Indicator(
@@ -333,23 +321,51 @@ if select_event:
 
     m2.update_layout(
         autosize=False,
-        width=400,
-        height=400,
+        width=300,
+        height=300,
     )
+    
+    #gauge for snr
+    snr = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = snr, 
+    title = {'text': "Network Matched Filter SNR"},
+    gauge = {'axis': {'range': [None, 40]},
+             'bar': {'color': "lightskyblue"},
+             'bgcolor': "white",
+             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 33}},      
+    ))
+    snr.update_layout(
+    autosize=False,
+    width=300,
+    height=300,
+    )
+    
+    #Columns for Gauges
+    col7, col8, col9 = st.columns(3)
 
-    col9, col10 = st.columns(2)
+    col7.write(total_mass)
 
-    col9.write(m1)
-    expdr = col9.expander('Show more info in column!')
+    col8.write(m1)
+
+    col9.write(m2)
+    
+    expander = st.expander("The total mass and the mass for each source, the red line indicates the largest mass found to date for each category, the event you selected is: " + event_name)
+    expander.write("This shows the total mass of the source and the breakdown of the masses of the two components labeled as Mass 1 and Mass 2")
+
+    col10, col11, = st.columns(2)
+
+    col10.write(lum_dist)
+    expdr = col10.expander('Luminosity Distance is how far, in Mpc, the merger is from the sun. This is a good indicator of the distance between the two sources')
     expdr.write('More info!')
-
-    col10.write(m2)
-    expdr = col10.expander('Show more info in column!')
+    
+    col11.write(snr)
+    expdr = col11.expander('The Network Matched Filter SNR is a measure of the quality of the data, with a higher SNR giving us better data')
     expdr.write('More info!')
 
     #have users select a detector
     detectorlist = ['H1', 'L1', 'V1']
-    detector = st.selectbox("Select a Detector", detectorlist)
+    detector = st.selectbox("Select a Detector, (Note: Not all events available for all detectors)", detectorlist)
     ## need to update to prevent error if detector is not available 
 
     #get timeseries and gps info to confirm
@@ -395,11 +411,11 @@ if select_event:
         label=r'Gravitational-wave amplitude'
     )
 
-    col11, col12 = st.columns(2)
+    col12, col13 = st.columns(2)
 
-    col11.write(wave)
+    col12.write(wave)
 
-    col12.pyplot(plot)
+    col13.pyplot(plot)
 
 
 else:
