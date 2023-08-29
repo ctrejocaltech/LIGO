@@ -180,7 +180,7 @@ event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="networ
     "mass_1_source": "Mass 1",
     "mass_2_source": "Mass 2", 
 
-}, title= "Event Catalog of source-frame component masses m<sub>(i)</sub>", color_continuous_scale = "magenta", hover_data=["commonName"])
+}, title= "Event Catalog of source-frame component masses m<sub>(i)</sub>", color_continuous_scale = "dense", hover_data=["commonName"])
 
 event_chart.update_traces(
     marker=dict(size=10,
@@ -258,6 +258,7 @@ if select_event:
     total_mass = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = total_mass_source,
+    number = {"suffix": "(M<sub>☉</sub>)"},
     title = {'text': "Total Mass (M<sub>☉</sub>)"},
     gauge = {'axis': {'range': [None, 200]},
              'bar': {'color': "lightskyblue"},
@@ -274,6 +275,7 @@ if select_event:
     lum_dist = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = dist,
+    number = {"suffix": "(Mpc)"},
     title = {'text': "Luminosity Distance (Mpc)"},
     gauge = {'axis': {'range': [None, 10000]},
              'bar': {'color': "lightskyblue"},
@@ -302,6 +304,7 @@ if select_event:
     m1 = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = mass_1,
+    number = {"suffix": "(M<sub>☉</sub>)"},
     title = {'text': "Mass of source 1 (M<sub>☉</sub>)"},
     gauge = {'axis': {'range': [None, 200]},
              'bar': {'color': "lightskyblue"},
@@ -319,6 +322,7 @@ if select_event:
     m2 = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = mass_2,
+    number = {"suffix": "(M<sub>☉</sub>)"},
     title = {'text': "Mass of source 2 (M<sub>☉</sub>)"},
     gauge = {'axis': {'range': [None, 200]},
              'bar': {'color': "lightskyblue"},
@@ -398,8 +402,8 @@ if select_event:
     col12.pyplot(plot)
 
 
-#else:
-    #st.write("Waiting for user to click on event...")
+else:
+    st.write("Waiting for user to click on event...")
 
 
 

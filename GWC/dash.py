@@ -1,3 +1,4 @@
+from math import log
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -112,6 +113,7 @@ def categorize_event(row):
     else:
         return 'NSBH'
 
+# sourcery skip: assign-if-exp
 df['Event'] = df.apply(categorize_event, axis=1)
 
 # Group data by event type and count occurrences
@@ -165,7 +167,9 @@ expdr.write('More info!')
 
 col6.altair_chart(snr, use_container_width=True)
 expdr = col6.expander('Show more info in column!')
-expdr.write('More info!')
+expdr.write('This network SNR is the quadrature sum of the individual detector SNRs for all detectors involved in the reported trigger; ')
+#cite from https://journals.aps.org/prx/pdf/10.1103/PhysRevX.9.031040
+
 
 st.markdown('### Select an event to learn more')
 
@@ -176,7 +180,7 @@ event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="networ
     "mass_1_source": "Mass 1",
     "mass_2_source": "Mass 2", 
 
-}, title= "Event Catalog", color_continuous_scale = "magenta", hover_data=["commonName"])
+}, title= "Event Catalog of source-frame component masses m<sub>(i)</sub>", color_continuous_scale = "dense", hover_data=["commonName"])
 
 event_chart.update_traces(
     marker=dict(size=10,
@@ -187,8 +191,8 @@ event_chart.update_layout(
     hovermode='closest',
     width=900,
     height=450,
-   xaxis_title="Mass 1",
-   yaxis_title="Mass 2",
+    xaxis_title="Mass 1 (M<sub>☉</sub>)",  # Add the smaller Solar Mass symbol using <sub> tag
+    yaxis_title="Mass 2 (M<sub>☉</sub>)", 
 )
 event_chart.update_xaxes(
     title_standoff=10,
@@ -198,6 +202,10 @@ event_chart.update_yaxes(
     title_standoff=10,
     title_font = {"size": 15},
 )
+
+expander = st.expander("See for more info!")
+expander.write(
+    'The chart above shows some numbers I picked for you.')
 
 #User Selection
 select_event = plotly_events(event_chart, click_event=True)
@@ -250,7 +258,8 @@ if select_event:
     total_mass = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = total_mass_source,
-    title = {'text': "Total Mass"},
+    number = {"suffix": "(M<sub>☉</sub>)"},
+    title = {'text': "Total Mass (M<sub>☉</sub>)"},
     gauge = {'axis': {'range': [None, 200]},
              'bar': {'color': "lightskyblue"},
              'bgcolor': "white",
@@ -262,11 +271,12 @@ if select_event:
         autosize=False,
         width=400,
         height=400,
-)
+    )
     lum_dist = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = dist,
-    title = {'text': "Luminosity Distance"},
+    number = {"suffix": "(Mpc)"},
+    title = {'text': "Luminosity Distance (Mpc)"},
     gauge = {'axis': {'range': [None, 10000]},
              'bar': {'color': "lightskyblue"},
              'bgcolor': "white",
@@ -278,18 +288,24 @@ if select_event:
         autosize=False,
         width=400,
         height=400,
-)
-
+    )
+    #Second column for gauges
     col7, col8 = st.columns(2)
 
     col7.write(total_mass)
+    expdr = col7.expander('Show more info in column!')
+    expdr.write('More info!')
 
     col8.write(lum_dist)
+    expdr = col8.expander('Show more info in column!')
+    expdr.write('More info!')
 
+    #gauge for mass1
     m1 = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = mass_1,
-    title = {'text': "Mass of source 1"},
+    number = {"suffix": "(M<sub>☉</sub>)"},
+    title = {'text': "Mass of source 1 (M<sub>☉</sub>)"},
     gauge = {'axis': {'range': [None, 200]},
              'bar': {'color': "lightskyblue"},
              'bgcolor': "white",
@@ -301,12 +317,13 @@ if select_event:
         autosize=False,
         width=400,
         height=400,
-)
-
+    )
+    #gauge for mass2
     m2 = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = mass_2,
-    title = {'text': "Mass of source 2"},
+    number = {"suffix": "(M<sub>☉</sub>)"},
+    title = {'text': "Mass of source 2 (M<sub>☉</sub>)"},
     gauge = {'axis': {'range': [None, 200]},
              'bar': {'color': "lightskyblue"},
              'bgcolor': "white",
@@ -318,13 +335,17 @@ if select_event:
         autosize=False,
         width=400,
         height=400,
-)
+    )
 
     col9, col10 = st.columns(2)
 
     col9.write(m1)
+    expdr = col9.expander('Show more info in column!')
+    expdr.write('More info!')
 
     col10.write(m2)
+    expdr = col10.expander('Show more info in column!')
+    expdr.write('More info!')
 
     #have users select a detector
     detectorlist = ['H1', 'L1', 'V1']
@@ -335,28 +356,33 @@ if select_event:
     segment = (int(gps_info)-5, int(gps_info)+5)
     ldata = TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
 
-    #Q Transform GPS data slider
-    gps_time_start = st.slider('Select GPS Start Range', -5.0, 0.1, (-1.0))
-    gps_time_end = st.slider('Select GPS End Range', 0.1, 5.0, (1.0))
-
+    ###TEST FOR QTRANS
     st.subheader('Q-transform')
-    t0 = datasets.event_gps(event_name)
-    dtboth = st.slider('Time Range (seconds)', 0.1, 8.0, 1.0)  # min, max, default
-    dt = dtboth / 2.0
-    vmax = st.slider('Colorbar Max Energy', 10, 500, 25)  # min, max, default
-    qcenter = st.slider('Q-value', 5, 120, 5)  # min, max, default
-    qrange = (int(qcenter*0.8), int(qcenter*1.2))
 
+    hq = None
+    chirp_mass = event_df['chirp_mass_source']
+    bns = chirp_mass < 5
+    t0 = datasets.event_gps(event_name)
+    q_center = 100*(1/chirp_mass)
+    q_center[q_center > 5] = 5
+    qrange_min = float((q_center*0.8).min())
+    qrange_max = float((q_center*1.2).max())
+    qrange = (qrange_min, qrange_max)
+
+    if bns.any():
+        dt = 2
+    else: 
+        dt = 0.3
+        
     hq = ldata.q_transform(outseg=(t0-dt, t0+dt), qrange=qrange)
 
-    with _lock:
-        fig4 = hq.plot()
-        ax = fig4.gca()
-        fig4.colorbar(label="Normalised energy", vmax=vmax, vmin=0)
-        ax.grid(False)
-        ax.set_yscale('log')
-        ax.set_ylim(bottom=15)
-        st.pyplot(fig4, clear_figure=True)
+    fig4 = hq.plot()
+    ax = fig4.gca()
+    fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
+    ax.grid(False)
+    ax.set_yscale('log')
+    ax.set_ylim(ymin=20, ymax=1024)
+    st.pyplot(fig4, clear_figure=True)
 
     #Spectrogram to confirm data is feeding through
     specgram = ldata.spectrogram(2, fftlength=1, overlap=.5)**(1/2.)
