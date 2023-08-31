@@ -44,6 +44,7 @@ mpl.use("agg")
 from matplotlib.backends.backend_agg import RendererAgg
 _lock = RendererAgg.lock
 
+
 # --Set page config
 apptitle = 'GWTC Global View'
 st.set_page_config(page_title=apptitle, layout="wide")
@@ -130,7 +131,8 @@ pie_chart = alt.Chart(grouped_df).mark_arc().encode(
 
 col3.altair_chart(pie_chart, use_container_width=True)
 expdr = col3.expander('Breakdown of the type of events we have detected so far')
-expdr.write('BBH are Binary Black Hole Mergers, BNS are Binary Nutron Star Mergers and NSBH is a merger between a black hole and a nutron star')
+expdr.write(
+    'BBH are Binary Black Hole Mergers, BNS are Binary Neutron Star Mergers and NSBH is a merger between a black hole and a neutron star')
 
 #mass chart for Dashboard
 mass_chart = alt.Chart(df, title="Total Mass Histogram").mark_bar().encode(
@@ -151,7 +153,6 @@ dist = alt.Chart(df, title="Distance Histogram").mark_bar().encode(
     y=alt.Y('count()', title='Count')
 )
 
-
 #SECOND ROW COLUMNS
 col4, col5, col6 = st.columns(3)
 
@@ -168,16 +169,13 @@ expdr = col6.expander('Show more info in column!')
 expdr.write('This network SNR is the quadrature sum of the individual detector SNRs for all detectors involved in the reported trigger; ')
 #cite from https://journals.aps.org/prx/pdf/10.1103/PhysRevX.9.031040
 
-
 st.markdown('### Select an event to learn more')
-
 #MAIN CHART FOR USER INPUT
-event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
+event_chart = px.scatter(event_df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
     "network_matched_filter_snr": "Network SNR",
     "commonName": "Name",
     "mass_1_source": "Mass 1",
     "mass_2_source": "Mass 2", 
-
 }, title= "Event Catalog of source-frame component masses m<sub>(i)</sub>", color_continuous_scale = "dense", hover_data=["commonName"])
 
 event_chart.update_traces(
@@ -186,11 +184,12 @@ event_chart.update_traces(
     )
 )
 event_chart.update_layout(
-    hovermode='closest',
+    hovermode='x unified',
     width=900,
     height=450,
     xaxis_title="Mass 1 (M<sub>☉</sub>)",  # Add the smaller Solar Mass symbol using <sub> tag
     yaxis_title="Mass 2 (M<sub>☉</sub>)", 
+    hoverdistance=-1,
 )
 event_chart.update_xaxes(
     title_standoff=10,
@@ -201,13 +200,33 @@ event_chart.update_yaxes(
     title_font = {"size": 15},
 )
 
-expander = st.expander("See for more info!")
-expander.write(
-    'Info about the Chart')
+# Function to filter event options based on input prefix
+def filter_event_options(prefix):
+    return event_df[event_df['commonName'].str.startswith(prefix)]['commonName'].tolist()
 
+event_input = st.multiselect(
+    "If you have an Event Name enter it below, otherwise click on an event in the chart to populate more information about that specific Event:",
+    filter_event_options(""),
+    default=[],
+    key="event_input",
+)
+# Initialize select_event as an empty list
+select_event = []
 #User Selection
 select_event = plotly_events(event_chart, click_event=True)
-selected_event_name = st.text_input("Enter Event Name:", "")
+
+expander = st.expander("Expand for more information regarding the Event Catalog Chart")
+expander.write('Info about the Chart')            
+
+if event_input:
+    selected_event_name = event_input[0]
+    selected_event_row = df[df['commonName'] == selected_event_name]
+    if not selected_event_row.empty:
+        selected_x = selected_event_row['mass_1_source'].values[0]
+        selected_y = selected_event_row['mass_2_source'].values[0]
+        select_event = [{'x': selected_x, 'y': selected_y}]
+    else:
+        st.write("Selected event not found in the dataset.")
 
 if select_event:
     # Retrieve clicked x and y values
@@ -231,8 +250,7 @@ if select_event:
             snr = selected_row['network_matched_filter_snr'].values[0]
         else:
             st.write("GPS Information not available for the selected event.")
-
-
+            
 #CHARTS WITH USER INPUT
 if select_event:
     #generate waveform
@@ -288,7 +306,7 @@ if select_event:
         width=300,
         height=300,
     )
-    
+
     m1 = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = mass_1,
@@ -324,7 +342,7 @@ if select_event:
         width=300,
         height=300,
     )
-    
+
     #gauge for snr
     snr = go.Figure(go.Indicator(
     mode = "gauge+number",
@@ -340,7 +358,7 @@ if select_event:
     width=300,
     height=300,
     )
-    
+
     #Columns for Gauges
     col7, col8, col9 = st.columns(3)
 
@@ -349,7 +367,7 @@ if select_event:
     col8.write(m1)
 
     col9.write(m2)
-    
+
     expander = st.expander("The total mass and the mass for each source, the red line indicates the largest mass found to date for each category, the event you selected is: " + event_name)
     expander.write("This shows the total mass of the source and the breakdown of the masses of the two components labeled as Mass 1 and Mass 2")
 
@@ -358,7 +376,7 @@ if select_event:
     col10.write(lum_dist)
     expdr = col10.expander('Luminosity Distance is how far, in Mpc, the merger is from the sun. This is a good indicator of the distance between the two sources')
     expdr.write('More info!')
-    
+
     col11.write(snr)
     expdr = col11.expander('The Network Matched Filter SNR is a measure of the quality of the data, with a higher SNR giving us better data')
     expdr.write('More info!')
@@ -389,7 +407,7 @@ if select_event:
         dt = 2
     else: 
         dt = 0.3
-        
+
     hq = ldata.q_transform(outseg=(t0-dt, t0+dt), qrange=qrange)
 
     fig4 = hq.plot()
@@ -417,9 +435,8 @@ if select_event:
 
     col13.pyplot(plot)
 
-
 else:
-    st.write("Waiting for user to click on event...")
+    st.write("Click on event to view more details")
 
 
 
