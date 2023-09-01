@@ -51,9 +51,7 @@ st.set_page_config(page_title=apptitle, layout="wide")
 
 #Title the app
 st.title('Gravitational-wave Transient Catalog Dashboard')
-
-#Top Dashboard Elements
-st.markdown('### Metrics')
+st.write('The Gravitational-wave Transient Catalog (GWTC) is a cumulative set of gravitational wave transients maintained by the LIGO/Virgo/KAGRA collaboration. The online GWTC contains confidently-detected events from multiple data releases. For further information, please visit https://gwosc.org')
 
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
@@ -98,10 +96,10 @@ df = pd.read_excel(updated_excel)
 # Count for total observations 
 count = event_df.commonName.unique().size
 
-col2.metric(label="Total Observations in this Catalog",
+col2.metric(label="Total Observations in the Catalog",
     value=(count),    
 )
-col2.write('The observations shown contain information for the mass of both sources')
+col2.write('This is the number of confident observations for the catalog selected, for a complete list of all events please visit: https://gwosc.org/eventapi/html/allevents/' )
 
 # Sort mass for event type distribution
 def categorize_event(row):
@@ -110,7 +108,7 @@ def categorize_event(row):
     elif row['mass_1_source'] >= 3 and row['mass_2_source'] >= 3:
         return 'Binary Black Hole'
     else:
-        return 'Neutron Star Black Hole'
+        return 'Neutron Star - Black Hole'
 
 # sourcery skip: assign-if-exp
 df['Event'] = df.apply(categorize_event, axis=1)
@@ -130,9 +128,7 @@ pie_chart = alt.Chart(grouped_df).mark_arc().encode(
 )
 
 col3.altair_chart(pie_chart, use_container_width=True)
-expdr = col3.expander('Breakdown of the type of events we have detected so far')
-expdr.write(
-    'BBH are Binary Black Hole Mergers, BNS are Binary Neutron Star Mergers and NSBH is a merger between a black hole and a neutron star')
+col3.write('Breakdown of the type of events we have detected so far')
 
 #mass chart for Dashboard
 mass_chart = alt.Chart(df, title="Total Mass Histogram").mark_bar().encode(
@@ -148,7 +144,7 @@ snr = alt.Chart(df, title="Network SNR Histogram").mark_bar().encode(
 )
 
 #Histogram for Distance
-dist = alt.Chart(df, title="Distance Histogram").mark_bar().encode(
+dist = alt.Chart(df, title="Luminosity Distance Histogram").mark_bar().encode(
     x=alt.X('luminosity_distance:Q', title='Distance in Mpc', bin=alt.Bin(maxbins=10)),
     y=alt.Y('count()', title='Count')
 )
@@ -157,19 +153,16 @@ dist = alt.Chart(df, title="Distance Histogram").mark_bar().encode(
 col4, col5, col6 = st.columns(3)
 
 col4.altair_chart(mass_chart, use_container_width=True)
-expdr = col4.expander('Show more info in column!')
-expdr.write('More info!')
+col4.write('Shows the distribution of mass for objects contained in the Catalog selected.')
 
 col5.altair_chart(dist, use_container_width=True)
-expdr = col5.expander('Show more info in column!')
-expdr.write('More info!')
+col5.write('Shows the distribution of luminosity distance in megaparsec (3.26 million lightyears) for objects contained in the Catalog selected.')
 
 col6.altair_chart(snr, use_container_width=True)
-expdr = col6.expander('Show more info in column!')
-expdr.write('This network SNR is the quadrature sum of the individual detector SNRs for all detectors involved in the reported trigger; ')
+col6.write('This network SNR is the quadrature sum of the individual detector SNRs for all detectors involved in the reported trigger. ')
 #cite from https://journals.aps.org/prx/pdf/10.1103/PhysRevX.9.031040
 
-st.markdown('### Select an event to learn more')
+st.markdown('### Select an event from the catalog to learn more')
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(event_df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
     "network_matched_filter_snr": "Network SNR",
@@ -205,7 +198,7 @@ def filter_event_options(prefix):
     return event_df[event_df['commonName'].str.startswith(prefix)]['commonName'].tolist()
 
 event_input = st.multiselect(
-    "If you have an Event Name enter it below, otherwise click on an event in the chart to populate more information about that specific Event:",
+    "Type the Event name below or click on an event in the chart to populate more information.",
     filter_event_options(""),
     default=[],
     key="event_input",
@@ -216,8 +209,16 @@ select_event = []
 select_event = plotly_events(event_chart, click_event=True)
 
 expander = st.expander("Expand for more information regarding the Event Catalog Chart")
-expander.write('Info about the Chart')            
-
+expander.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ') 
+expander.write(
+"""
+The chart allows the following interactivity:
+- Pan and Zoom
+- Box Selection
+- Download chart as a PNG
+"""
+)      
+#lets user select an event by input or click
 if event_input:
     selected_event_name = event_input[0]
     selected_event_row = df[df['commonName'] == selected_event_name]
@@ -242,7 +243,8 @@ if select_event:
         st.markdown('### Selected Event: ' + event_name)
         gps_info = event_gps(event_name)
         if gps_info:
-            st.write("GPS Information:", gps_info)
+            st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
+            
             mass_1 = selected_row['mass_1_source'].values[0]
             mass_2 = selected_row['mass_2_source'].values[0]
             dist = selected_row['luminosity_distance'].values[0]
@@ -368,7 +370,7 @@ if select_event:
 
     col9.write(m2)
 
-    expander = st.expander("The total mass and the mass for each source, the red line indicates the largest mass found to date for each category, the event you selected is: " + event_name)
+    expander = st.expander("The total mass and the mass for each source, the :large_red_line: :red[red line] indicates the largest mass found to date for each category, the event you selected is: " + event_name)
     expander.write("This shows the total mass of the source and the breakdown of the masses of the two components labeled as Mass 1 and Mass 2")
 
     col10, col11, = st.columns(2)
@@ -391,7 +393,7 @@ if select_event:
     ldata = TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
 
     ###TEST FOR QTRANS
-    st.subheader('Q-transform')
+    st.subheader('Q-transform and other charts')
 
     hq = None
     chirp_mass = event_df['chirp_mass_source']
@@ -416,24 +418,19 @@ if select_event:
     ax.grid(False)
     ax.set_yscale('log')
     ax.set_ylim(ymin=20, ymax=1024)
-    st.pyplot(fig4, clear_figure=True)
-
-    #Spectrogram to confirm data is feeding through
-    specgram = ldata.spectrogram(2, fftlength=1, overlap=.5)**(1/2.)
-
-    plot = specgram.imshow(norm='log', vmin=5e-24, vmax=1e-19)
-    ax = plot.gca()
-    ax.set_yscale('log')
-    ax.set_ylim(10, 2000)
-    ax.colorbar(
-        label=r'Gravitational-wave amplitude'
-    )
+    #st.pyplot(fig4, clear_figure=True)
 
     col12, col13 = st.columns(2)
 
-    col12.write(wave)
+    col12.pyplot(fig4, clear_figure=True)
+    expdr = col12.expander('Q-transform')
+    expdr.write('More info!')
 
-    col13.pyplot(plot)
+
+    col13.write(wave)
+    expdr = col13.expander('Info about waveform')
+    expdr.write('More info!')
+
 
 else:
     st.write("Click on event to view more details")
