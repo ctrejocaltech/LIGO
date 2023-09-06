@@ -28,6 +28,9 @@ from gwosc.api import fetch_event_json
 from copy import deepcopy
 import base64
 
+from scipy.io import wavfile
+import io
+
 # Use the non-interactive Agg backend, which is recommended as a
 # thread-safe backend.
 # See https://matplotlib.org/3.3.2/faq/howto_faq.html#working-with-threads.
@@ -393,7 +396,7 @@ if select_event:
     detector = st.selectbox("Select a Detector, (Note: Not all events available for all detectors)", detectorlist)
 
     # Q-transform and other charts
-    st.subheader('Q-transform and other charts')
+    #st.subheader('Q-transform')
     
     #generate waveform
     hp, hc = get_td_waveform(approximant="IMRPhenomD",
@@ -402,7 +405,14 @@ if select_event:
                             delta_t=1.0/16384,
                             f_lower=45,
                             distance=dist)
-
+    
+    # Convert the TimeSeries data to a numpy array
+    hp_array = np.array(hp)
+    # Scale the data to 16-bit integer values
+    hp_scaled = np.int16(hp_array / np.max(np.abs(hp_array)) * 32767)
+    # Save the waveform as a WAV file
+    wavfile.write("waveform.wav", 44100, hp_scaled)
+    
     #Zoom in near the merger time
     wave = plt.figure(figsize=pylab.figaspect(0.4))
     plt.plot(hp.sample_times, hp, label='Plus Polarization')
@@ -412,7 +422,7 @@ if select_event:
     plt.xlim(-.5, .5)
     plt.legend()
     plt.grid()
-
+    
     #Fetch Time Series Data
     def fetch_time_series(detector, segment):
         try:
@@ -454,12 +464,16 @@ if select_event:
             ax.set_ylim(ymin=20, ymax=1024)
             #last column
             col12, col13 = st.columns(2)
+            col12.subheader('Q-transform')            
             col12.pyplot(fig4, clear_figure=True)
             expdr = col12.expander('Q-transform')
             expdr.write('More info!')
+            col13.subheader('Waveform')
             col13.write(wave)
-            expdr = col13.expander('Info about waveform')
-            expdr.write('More info!')
+            col13.write('Listen to what the waveform sounds like')
+            col13.audio("waveform.wav")
+            expdr = col13.expander('Waveform')
+            expdr.write('more info!')
 else:
     st.write("Click on a event to view more details")
 

@@ -28,6 +28,9 @@ from gwosc.api import fetch_event_json
 from copy import deepcopy
 import base64
 
+from scipy.io import wavfile
+import io
+
 # Use the non-interactive Agg backend, which is recommended as a
 # thread-safe backend.
 # See https://matplotlib.org/3.3.2/faq/howto_faq.html#working-with-threads.
@@ -43,7 +46,6 @@ mpl.use("agg")
 ##############################################################################
 from matplotlib.backends.backend_agg import RendererAgg
 _lock = RendererAgg.lock
-
 
 # --Set page config
 apptitle = 'GWTC Global View'
@@ -82,6 +84,9 @@ with col1:
         event_df = grouped_data[selected_event]
 
 col1.write('Select an Event Catalog to learn more about each individual release')
+
+# Eliminate rows with missing mass_1_source or mass_2_source
+event_df = event_df.dropna(subset=['mass_1_source', 'mass_2_source'])
 
 #fix missing mass issue
 event_df['total_mass_source'] = event_df['mass_1_source'] + event_df['mass_2_source']
@@ -151,13 +156,10 @@ dist = alt.Chart(df, title="Luminosity Distance Histogram").mark_bar().encode(
 
 #SECOND ROW COLUMNS
 col4, col5, col6 = st.columns(3)
-
 col4.altair_chart(mass_chart, use_container_width=True)
 col4.write('Shows the distribution of mass for objects contained in the Catalog selected.')
-
 col5.altair_chart(dist, use_container_width=True)
 col5.write('Shows the distribution of luminosity distance in megaparsec (3.26 million lightyears) for objects contained in the Catalog selected.')
-
 col6.altair_chart(snr, use_container_width=True)
 col6.write('This network SNR is the quadrature sum of the individual detector SNRs for all detectors involved in the reported trigger. ')
 #cite from https://journals.aps.org/prx/pdf/10.1103/PhysRevX.9.031040
@@ -166,6 +168,7 @@ st.markdown('### Select an event from the catalog to learn more')
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(event_df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
     "network_matched_filter_snr": "Network SNR",
+    "luminosity_distance": "Luminosity Distance (Mpc)",
     "commonName": "Name",
     "mass_1_source": "Mass 1",
     "mass_2_source": "Mass 2", 
@@ -209,7 +212,7 @@ select_event = []
 select_event = plotly_events(event_chart, click_event=True)
 
 expander = st.expander("Expand for more information regarding the Event Catalog Chart")
-expander.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ') 
+expander.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
 expander.write(
 """
 The chart allows the following interactivity:
@@ -217,7 +220,7 @@ The chart allows the following interactivity:
 - Box Selection
 - Download chart as a PNG
 """
-)      
+)
 #lets user select an event by input or click
 if event_input:
     selected_event_name = event_input[0]
@@ -241,10 +244,9 @@ if select_event:
         selected_common_name = selected_row["commonName"].values[0]
         event_name = selected_common_name
         st.markdown('### Selected Event: ' + event_name)
-        gps_info = event_gps(event_name)
-        if gps_info:
+        if gps_info := event_gps(event_name):
             st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
-            
+
             mass_1 = selected_row['mass_1_source'].values[0]
             mass_2 = selected_row['mass_2_source'].values[0]
             dist = selected_row['luminosity_distance'].values[0]
@@ -254,106 +256,118 @@ if select_event:
             st.write("GPS Information not available for the selected event.")
             
 #CHARTS WITH USER INPUT
-if select_event:
-    #generate waveform
-    hp, hc = get_td_waveform(approximant="IMRPhenomD",
-                             mass1=mass_1,
-                             mass2=mass_2,
-                             delta_t=1.0/16384,
-                             f_lower=45,
-                             distance=dist)
-
-    #Zoom in near the merger time
-    wave = plt.figure(figsize=pylab.figaspect(0.4))
-    plt.plot(hp.sample_times, hp, label='Plus Polarization')
-    plt.plot(hp.sample_times, hc, label='Cross Polarization')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Strain')
-    plt.xlim(-.5, .5)
-    plt.legend()
-    plt.grid()
+if select_event:    
+    
+    st.markdown('### EVENT METRICS')
+    st.write('The :red[red line |] indicates the largest value found to date for each category')
+    st.write('The :blue[[blue area]] indicates the margin of error for each source')
 
     ##Gauge Indicators
+    total_mass_lower = selected_row['total_mass_source_lower'].values[0] + selected_row['total_mass_source'].values[0] 
+    total_mass_upper = selected_row['total_mass_source_upper'].values[0] + selected_row['total_mass_source'].values[0]    
     total_mass = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = total_mass_source,
-    number = {"suffix": "(M<sub>☉</sub>)"},
+    number = {"suffix": "M<sub>☉</sub>"},
     title = {'text': "Total Mass (M<sub>☉</sub>)"},
     gauge = {'axis': {'range': [None, 200]},
-             'bar': {'color': "lightskyblue"},
-             'bgcolor': "white",
-             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 181}},
+            'bar': {'color': "darkblue"},             
+            'steps' : [
+                {'range': [total_mass_source, total_mass_upper], 'color': "lightskyblue"},
+                {'range': [total_mass_source, total_mass_lower], 'color': "lightskyblue"}],             
+            'bgcolor': "white",
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 181}},
     domain = {'x': [0, 1], 'y': [0, 1]}
     ))
-
     total_mass.update_layout(
         autosize=False,
         width=300,
         height=300,
     )
-    lum_dist = go.Figure(go.Indicator(
-    mode = "gauge+number",
-    value = dist,
-    number = {"suffix": "(Mpc)"},
-    title = {'text': "Luminosity Distance <sub>(Mpc)</sub>"},
-    gauge = {'axis': {'range': [None, 10000]},
-             'bar': {'color': "lightskyblue"},
-             'bgcolor': "white",
-             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 8280}},
-    domain = {'x': [0, 1], 'y': [0, 1]}
-    ))
-
-    lum_dist.update_layout(
-        autosize=False,
-        width=300,
-        height=300,
-    )
-
+    #mass 1 gauge
+    m1_lower = selected_row['mass_1_source_lower'].values[0] + selected_row['mass_1_source'].values[0] 
+    m1_upper = selected_row['mass_1_source_upper'].values[0] + selected_row['mass_1_source'].values[0]    
     m1 = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = mass_1,
-    number = {"suffix": "(M<sub>☉</sub>)"},
+    number = {"suffix": "M<sub>☉</sub>"},
     title = {'text': "Mass of source 1 (M<sub>☉</sub>)"},
     gauge = {'axis': {'range': [None, 200]},
-             'bar': {'color': "lightskyblue"},
-             'bgcolor': "white",
-             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 105}},
+            'bar': {'color': "darkblue"},             
+            'steps' : [
+                {'range': [mass_1, m1_upper], 'color': "lightskyblue"},
+                {'range': [mass_1, m1_lower], 'color': "lightskyblue"}],             
+            'bgcolor': "white",
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 105}},
     domain = {'x': [0, 1], 'y': [0, 1]}
     ))
-
     m1.update_layout(
         autosize=False,
         width=300,
         height=300,
     )
-    #gauge for mass2
+    #mass 2 gauge
+    m2_lower = selected_row['mass_2_source_lower'].values[0] + selected_row['mass_2_source'].values[0] 
+    m2_upper = selected_row['mass_2_source_upper'].values[0] + selected_row['mass_2_source'].values[0]    
     m2 = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = mass_2,
-    number = {"suffix": "(M<sub>☉</sub>)"},
+    number = {"suffix": "M<sub>☉</sub>"},
     title = {'text': "Mass of source 2 (M<sub>☉</sub>)"},
-    gauge = {'axis': {'range': [None, 200]},
-             'bar': {'color': "lightskyblue"},
-             'bgcolor': "white",
-             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 76}},
+    gauge = {'axis': {'range': [None, 200]},           
+            'steps' : [
+                {'range': [mass_2, m2_upper], 'color': "lightgray"},
+                {'range': [mass_2, m2_upper], 'color': "lightgray"}],
+            'bgcolor': "white",
+            'bar': {'color': "darkblue"},              
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 76}},
     domain = {'x': [0, 1], 'y': [0, 1]}
     ))
-
     m2.update_layout(
         autosize=False,
         width=300,
         height=300,
     )
-
-    #gauge for snr
+    #lum dist gauge
+    lum_dist_lower = selected_row['luminosity_distance_lower'].values[0] + selected_row['luminosity_distance'].values[0] 
+    lum_dist_upper = selected_row['luminosity_distance_upper'].values[0] + selected_row['luminosity_distance'].values[0]        
+    #Convert lum_dist from Mpc to Gpc 
+    dist = dist/1000
+    lum_dist_lower = lum_dist_lower/1000
+    lum_dist_upper = lum_dist_upper/1000 
+    lum_dist = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = dist,
+    number = {"suffix": "Gpc"},
+    title = {'text': "Luminosity Distance (Gpc)"},
+    gauge = {'axis': {'range': [None, 10]},
+            'bar': {'color': "darkblue"},
+            'steps' : [
+                {'range': [dist, lum_dist_upper], 'color': "lightskyblue"},
+                {'range': [dist, lum_dist_lower], 'color': "lightskyblue"}],             
+            'bgcolor': "white",
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 8.28}},
+    domain = {'x': [0, 1], 'y': [0, 1]}
+    ))
+    lum_dist.update_layout(
+        autosize=False,
+        width=300,
+        height=300,
+    )
+    #snr gauge
+    snr_lower = selected_row['network_matched_filter_snr_lower'].values[0] + selected_row['network_matched_filter_snr'].values[0] 
+    snr_upper = selected_row['network_matched_filter_snr_upper'].values[0] + selected_row['network_matched_filter_snr'].values[0]
     snr = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = snr, 
     title = {'text': "Network Matched Filter SNR"},
     gauge = {'axis': {'range': [None, 40]},
-             'bar': {'color': "lightskyblue"},
-             'bgcolor': "white",
-             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 33}},      
+            'steps' : [
+                {'range': [snr, snr_upper], 'color': "lightskyblue"},
+                {'range': [snr, snr_lower], 'color': "lightskyblue"}],
+            'bar': {'color': "darkblue"},
+            'bgcolor': "white",
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 33}},      
     ))
     snr.update_layout(
     autosize=False,
@@ -363,22 +377,16 @@ if select_event:
 
     #Columns for Gauges
     col7, col8, col9 = st.columns(3)
-
     col7.write(total_mass)
-
     col8.write(m1)
-
     col9.write(m2)
-
-    expander = st.expander("The total mass and the mass for each source, the :large_red_line: :red[red line] indicates the largest mass found to date for each category, the event you selected is: " + event_name)
-    expander.write("This shows the total mass of the source and the breakdown of the masses of the two components labeled as Mass 1 and Mass 2")
-
+    expander = st.expander('Total Mass before merger and individual mass for both objects shown')
+    expander.write("The largest combined mass found so far is for Event: GW190426_190642 with a combined mass of :red[181.5 solar masses], Mass of object 1 is :red[105.5 solar masses] and for object 2 it is :red[76.5 solar masses].")
+    #second column
     col10, col11, = st.columns(2)
-
     col10.write(lum_dist)
-    expdr = col10.expander('Luminosity Distance is how far, in Mpc, the merger is from the sun. This is a good indicator of the distance between the two sources')
+    expdr = col10.expander('Luminosity Distance is how far, in Gpc, the merger is from the sun. This is a good indicator of the distance between the two sources')
     expdr.write('More info!')
-
     col11.write(snr)
     expdr = col11.expander('The Network Matched Filter SNR is a measure of the quality of the data, with a higher SNR giving us better data')
     expdr.write('More info!')
@@ -386,59 +394,86 @@ if select_event:
     #have users select a detector
     detectorlist = ['H1', 'L1', 'V1']
     detector = st.selectbox("Select a Detector, (Note: Not all events available for all detectors)", detectorlist)
-    ## need to update to prevent error if detector is not available 
 
-    #get timeseries and gps info to confirm
-    segment = (int(gps_info)-5, int(gps_info)+5)
-    ldata = TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
+    # Q-transform and other charts
+    #st.subheader('Q-transform')
+    
+    #generate waveform
+    hp, hc = get_td_waveform(approximant="IMRPhenomD",
+                            mass1=mass_1,
+                            mass2=mass_2,
+                            delta_t=1.0/16384,
+                            f_lower=45,
+                            distance=dist)
+    
+    # Convert the TimeSeries data to a numpy array
+    hp_array = np.array(hp)
+    # Scale the data to 16-bit integer values
+    hp_scaled = np.int16(hp_array / np.max(np.abs(hp_array)) * 32767)
+    # Save the waveform as a WAV file
+    wavfile.write("waveform.wav", 44100, hp_scaled)
+    
+    #Zoom in near the merger time
+    wave = plt.figure(figsize=pylab.figaspect(0.4))
+    plt.plot(hp.sample_times, hp, label='Plus Polarization')
+    plt.plot(hp.sample_times, hc, label='Cross Polarization')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Strain')
+    plt.xlim(-.5, .5)
+    plt.legend()
+    plt.grid()
+    
+    #Fetch Time Series Data
+    def fetch_time_series(detector, segment):
+        try:
+            return TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
+        except Exception as e:
+            st.error(f"Please select a valid detector: {str(e)}")
+            return None
 
-    ###TEST FOR QTRANS
-    st.subheader('Q-transform and other charts')
+    if gps_info:
+        # Define the segment based on GPS info
+        segment = (int(gps_info) - 5, int(gps_info) + 5)
 
-    hq = None
-    chirp_mass = event_df['chirp_mass_source']
-    bns = chirp_mass < 5
-    t0 = datasets.event_gps(event_name)
-    q_center = 100*(1/chirp_mass)
-    q_center[q_center > 5] = 5
-    qrange_min = float((q_center*0.8).min())
-    qrange_max = float((q_center*1.2).max())
-    qrange = (qrange_min, qrange_max)
+        # Fetch time series data for the selected detector
+        ldata = fetch_time_series(detector, segment)
 
-    if bns.any():
-        dt = 2
-    else: 
-        dt = 0.3
+        if ldata is not None:  # Check if ldata is not None before proceeding
+            #setup for q transform
+            hq = None
+            chirp_mass = event_df['chirp_mass_source']
+            bns = chirp_mass < 5
+            t0 = datasets.event_gps(event_name)
+            q_center = 100*(1/chirp_mass)
+            q_center[q_center > 5] = 5
+            qrange_min = float((q_center*0.8).min())
+            qrange_max = float((q_center*1.2).max())
+            qrange = (qrange_min, qrange_max)
 
-    hq = ldata.q_transform(outseg=(t0-dt, t0+dt), qrange=qrange)
-
-    fig4 = hq.plot()
-    ax = fig4.gca()
-    fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
-    ax.grid(False)
-    ax.set_yscale('log')
-    ax.set_ylim(ymin=20, ymax=1024)
-    #st.pyplot(fig4, clear_figure=True)
-
-    col12, col13 = st.columns(2)
-
-    col12.pyplot(fig4, clear_figure=True)
-    expdr = col12.expander('Q-transform')
-    expdr.write('More info!')
-
-
-    col13.write(wave)
-    expdr = col13.expander('Info about waveform')
-    expdr.write('More info!')
-
-
+            if bns.any():
+                dt = 2
+            else:
+                dt = 0.3
+            #q transform
+            hq = ldata.q_transform(outseg=(t0-dt, t0+dt), qrange=qrange)
+            fig4 = hq.plot()
+            ax = fig4.gca()
+            fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
+            ax.grid(False)
+            ax.set_yscale('log')
+            ax.set_ylim(ymin=20, ymax=1024)
+            #last column
+            col12, col13 = st.columns(2)
+            col12.subheader('Q-transform')            
+            col12.pyplot(fig4, clear_figure=True)
+            expdr = col12.expander('Q-transform')
+            expdr.write('More info!')
+            col13.subheader('Waveform')
+            col13.write(wave)
+            col13.write('Listen to what the waveform sounds like')
+            col13.audio("waveform.wav")
+            expdr = col13.expander('Waveform')
+            expdr.write('more info!')
 else:
-    st.write("Click on event to view more details")
+    st.write("Click on a event to view more details")
 
-
-
-
-#--Add
-
-#--Fix errors
-#Detector Error
