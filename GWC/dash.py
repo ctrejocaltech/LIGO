@@ -271,7 +271,7 @@ if select_event:
     number = {"suffix": "M<sub>☉</sub>"},
     title = {'text': "Total Mass (M<sub>☉</sub>)"},
     gauge = {'axis': {'range': [None, 200]},
-            'bar': {'color': "darkblue"},             
+            'bar': {'color': "black"},             
             'steps' : [
                 {'range': [total_mass_source, total_mass_upper], 'color': "lightskyblue"},
                 {'range': [total_mass_source, total_mass_lower], 'color': "lightskyblue"}],             
@@ -293,7 +293,7 @@ if select_event:
     number = {"suffix": "M<sub>☉</sub>"},
     title = {'text': "Mass of source 1 (M<sub>☉</sub>)"},
     gauge = {'axis': {'range': [None, 200]},
-            'bar': {'color': "darkblue"},             
+            'bar': {'color': "black"},             
             'steps' : [
                 {'range': [mass_1, m1_upper], 'color': "lightskyblue"},
                 {'range': [mass_1, m1_lower], 'color': "lightskyblue"}],             
@@ -316,10 +316,10 @@ if select_event:
     title = {'text': "Mass of source 2 (M<sub>☉</sub>)"},
     gauge = {'axis': {'range': [None, 200]},           
             'steps' : [
-                {'range': [mass_2, m2_upper], 'color': "lightgray"},
-                {'range': [mass_2, m2_upper], 'color': "lightgray"}],
+                {'range': [mass_2, m2_upper], 'color': "lightskyblue"},
+                {'range': [mass_2, m2_upper], 'color': "lightskyblue"}],
             'bgcolor': "white",
-            'bar': {'color': "darkblue"},              
+            'bar': {'color': "black"},              
             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 76}},
     domain = {'x': [0, 1], 'y': [0, 1]}
     ))
@@ -341,7 +341,7 @@ if select_event:
     number = {"suffix": "Gpc"},
     title = {'text': "Luminosity Distance (Gpc)"},
     gauge = {'axis': {'range': [None, 10]},
-            'bar': {'color': "darkblue"},
+            'bar': {'color': "black"},
             'steps' : [
                 {'range': [dist, lum_dist_upper], 'color': "lightskyblue"},
                 {'range': [dist, lum_dist_lower], 'color': "lightskyblue"}],             
@@ -365,7 +365,7 @@ if select_event:
             'steps' : [
                 {'range': [snr, snr_upper], 'color': "lightskyblue"},
                 {'range': [snr, snr_lower], 'color': "lightskyblue"}],
-            'bar': {'color': "darkblue"},
+            'bar': {'color': "black"},
             'bgcolor': "white",
             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 33}},      
     ))
