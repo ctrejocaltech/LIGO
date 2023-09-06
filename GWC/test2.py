@@ -270,7 +270,7 @@ if select_event:
     value = total_mass_source,
     number = {"suffix": "M<sub>☉</sub>"},
     title = {'text': "Total Mass (M<sub>☉</sub>)"},
-    gauge = {'axis': {'range': [None, 200]},
+    gauge = {'axis': {'range': [None, 220]},
             'bar': {'color': "black"},             
             'steps' : [
                 {'range': [total_mass_source, total_mass_upper], 'color': "lightskyblue"},
@@ -314,12 +314,12 @@ if select_event:
     value = mass_2,
     number = {"suffix": "M<sub>☉</sub>"},
     title = {'text': "Mass of source 2 (M<sub>☉</sub>)"},
-    gauge = {'axis': {'range': [None, 200]},           
+    gauge = {'axis': {'range': [None, 180]},  
+            'bar': {'color': "black"},         
             'steps' : [
                 {'range': [mass_2, m2_upper], 'color': "lightskyblue"},
-                {'range': [mass_2, m2_upper], 'color': "lightskyblue"}],
-            'bgcolor': "white",
-            'bar': {'color': "black"},              
+                {'range': [mass_2, m2_lower], 'color': "lightskyblue"}],
+            'bgcolor': "white",           
             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 76}},
     domain = {'x': [0, 1], 'y': [0, 1]}
     ))
@@ -340,7 +340,7 @@ if select_event:
     value = dist,
     number = {"suffix": "Gpc"},
     title = {'text': "Luminosity Distance (Gpc)"},
-    gauge = {'axis': {'range': [None, 10]},
+    gauge = {'axis': {'range': [None, 18]},
             'bar': {'color': "black"},
             'steps' : [
                 {'range': [dist, lum_dist_upper], 'color': "lightskyblue"},
