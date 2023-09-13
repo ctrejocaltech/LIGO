@@ -389,7 +389,7 @@ if select_event:
         height=300,
         annotations=[
             dict(
-                text= event_name + " total mass in relation to the catalogs mass distribution",
+                text= "Total mass of " + event_name + " in relation to the catalogs mass distribution in solar mass.",
                 xref="paper",
                 yref="paper",
                 x=0.5,  # Adjust the x position for centering
@@ -420,7 +420,7 @@ if select_event:
         height=300,
         annotations=[
             dict(
-                text= event_name + " the mass of source 1 in relation to the catalogs mass distribution",
+                text= "The mass of source 1 in relation to the catalogs mass 1 distribution in solar mass.",
                 xref="paper",
                 yref="paper",
                 x=0.5,  # Adjust the x position for centering
@@ -451,7 +451,7 @@ if select_event:
         height=300,
         annotations=[
             dict(
-                text= event_name + " the mass of source 2 in relation to the catalogs mass distribution",
+                text= "The mass of source 2 in relation to the catalogs mass 2 distribution in solar mass.",
                 xref="paper",
                 yref="paper",
                 x=0.5,  # Adjust the x position for centering
@@ -483,7 +483,7 @@ if select_event:
         height=300,
         annotations=[
             dict(
-                text= event_name + " the luminosity distance in relation to the catalogs range.",
+                text= "The luminosity distance in relation to the catalogs range in Gpc.",
                 xref="paper",
                 yref="paper",
                 x=0.5,  # Adjust the x position for centering
@@ -515,7 +515,7 @@ if select_event:
         height=300,
         annotations=[
             dict(
-                text= event_name + " the network snr in relation to the catalogs distribution",
+                text= "The network SNR in relation to the catalogs distribution.",
                 xref="paper",
                 yref="paper",
                 x=0.5,  # Adjust the x position for centering
@@ -526,7 +526,7 @@ if select_event:
         ]
     )
     #Columns for Gauges
-    st.write('Largest Total Mass found to date is for Event GW190426_190642 at :red[181.5 solar masses], with the largest mass of object 1 at :red[105.5 solar masses], and the largest mass of object 2 at :red[76.5 solar masses]')
+    st.write('Largest Total Mass found to date is for Event GW190426_190642 at :red[181.5 solar masses], with the largest mass of object 1 at :red[105.5 solar masses], and the largest mass of object 2 at :red[76.5 solar masses].')
     col7, col8, col9 = st.columns(3)
     col7.write(total_mass)
     col7.write(ridge_mass)
@@ -538,15 +538,15 @@ if select_event:
     #second column
     col10, col11, = st.columns(2)
     col10.write(lum_dist)
-    col10.write('The furthest merger observed to date is for Event GW190403_051519 at :red[8.28 Gpc]')
+    col10.write('The furthest merger observed to date is for Event GW190403_051519 at :red[8.28 Gpc].')
     col10.write(ridge_dist)
     col11.write(snr_chart)
-    col11.write('The highest SNR observed to date is for Event: GW170817 at :red[33]')
+    col11.write('The highest SNR observed to date is for Event: GW170817 at :red[33].')
     col11.write(ridge_snr)
     st.divider()
     #have users select a detector
     detectorlist = ['H1', 'L1', 'V1']
-    detector = st.selectbox("Select a Detector, (Note: Not all events available for all detectors)", detectorlist)
+    detector = st.selectbox("Select a Detector, (Note: Not all events available for all detectors.)", detectorlist)
 
     #generate waveform
     hp, hc = get_td_waveform(approximant="IMRPhenomD",
