@@ -526,15 +526,13 @@ if select_event:
         ]
     )
     #Columns for Gauges
+    st.write('Largest Total Mass found to date is for Event GW190426_190642 at :red[181.5 solar masses], with the largest mass of object 1 at :red[105.5 solar masses], and the largest mass of object 2 at :red[76.5 solar masses]')
     col7, col8, col9 = st.columns(3)
     col7.write(total_mass)
-    col7.write('Largest Total Mass found to date is for Event GW190426_190642 at :red[181.5 solar masses]')
     col7.write(ridge_mass)
     col8.write(m1)
-    col8.write('with the largest mass of object 1 at :red[105.5 solar masses]')
     col8.write(ridge_mass1) 
     col9.write(m2)
-    col9.write('and the largest mass of object 2 at :red[76.5 solar masses]')
     col9.write(ridge_mass2)
     st.divider()
     #second column
