@@ -57,17 +57,13 @@ st.set_page_config(page_title=apptitle, layout="wide")
 st.title('Gravitational-wave Transient Catalog Dashboard')
 st.write('The Gravitational-wave Transient Catalog (GWTC) is a cumulative set of gravitational wave transients maintained by the LIGO/Virgo/KAGRA collaboration. The online GWTC contains confidently-detected events from multiple data releases. For further information, please visit https://gwosc.org')
 
-
-####TEST
 # Get the current page URL
 url = st.experimental_get_query_params()
 
 # Get specific parameter values, e.g., event_name
-event_name = url.get("event_name", ["default_event"])[0]
+event_url = url.get("event_name", ["default_event"])[0]
 
-st.write(event_name)
-####TEST
-
+st.write(event_url)
 
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
@@ -93,9 +89,9 @@ st.divider()
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    selected_event = st.selectbox('Select an Event Catalog (Defaults to GWTC)', grouped_data.keys())
-    if selected_event in grouped_data:
-        event_df = grouped_data[selected_event]
+    selected_cat = st.selectbox('Select an Event Catalog (Defaults to GWTC)', grouped_data.keys())
+    if selected_cat in grouped_data:
+        event_df = grouped_data[selected_cat]
 
 col1.write('Each Catalog contains a collection of events observed during each LIGO run.')
 
@@ -206,14 +202,20 @@ event_chart.update_yaxes(
     title_standoff=10,
     title_font = {"size": 15},
 )
+# Define the existing filtering function to filter based on prefix and event_name
+def filter_event_options(prefix, event_name):
+    # Use both prefix and event_name to filter event options
+    event_options = df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
+    
+    # If there's a specific event_name, filter further based on it
+    if event_url != "default_event":
+        event_options = [event for event in event_options if event_name in event]
 
-# Function to filter event options based on input prefix
-def filter_event_options(prefix):
-    return df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
+    return event_options
 
 event_input = st.multiselect(
     "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
-    filter_event_options(""),
+    filter_event_options("", event_url),
     default=[],
     key="event_input",
 )
