@@ -265,15 +265,6 @@ if select_event:
         else:
             st.write("GPS Information not available for the selected event.")    
 
-    # Fetch data or customize content based on the event_name
-    if event_name != "default_event":
-        if event_details := load_event_details(event_name):
-            # Display event details using Streamlit components
-            st.title(f"Event Details for {event_name}")
-            st.write(event_details)
-        else:
-            st.warning("Event not found.")            
-                                 
 #CHARTS WITH USER INPUT
 if select_event:    
     st.divider()
