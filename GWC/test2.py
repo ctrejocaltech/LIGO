@@ -62,12 +62,8 @@ st.write('The Gravitational-wave Transient Catalog (GWTC) is a cumulative set of
 # Get the current page URL
 url = st.experimental_get_query_params()
 
-# Parse the parameters from the URL
-parsed_url = urlparse(url)
-query_parameters = parse_qs(parsed_url.query)
-
 # Get specific parameter values, e.g., event_name
-event_name = query_parameters.get("event_name", ["default_event"])[0]
+event_name = url.get("event_name", ["default_event"])[0]
 
 st.write(event_name)
 ####TEST
