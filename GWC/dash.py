@@ -12,6 +12,7 @@ import pylab
 import openpyxl
 import requests
 import plotly.io as pio
+from urllib.parse import parse_qs, urlparse
 
 #other imports
 import matplotlib.pyplot as plt
@@ -56,6 +57,22 @@ st.set_page_config(page_title=apptitle, layout="wide")
 st.title('Gravitational-wave Transient Catalog Dashboard')
 st.write('The Gravitational-wave Transient Catalog (GWTC) is a cumulative set of gravitational wave transients maintained by the LIGO/Virgo/KAGRA collaboration. The online GWTC contains confidently-detected events from multiple data releases. For further information, please visit https://gwosc.org')
 
+
+####TEST
+# Get the current page URL
+url = st.experimental_get_query_params()
+
+# Parse the parameters from the URL
+parsed_url = urlparse(url)
+query_parameters = parse_qs(parsed_url.query)
+
+# Get specific parameter values, e.g., event_name
+event_name = query_parameters.get("event_name", ["default_event"])[0]
+
+st.write(event_name)
+####TEST
+
+
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
 def load_and_group_data():
@@ -94,6 +111,7 @@ updated_excel = 'updated_GWTC.xlsx'
 
 # Loads df to use for the rest of the dash
 df = pd.read_excel(updated_excel)
+
 # Count for total observations 
 count = event_df.commonName.unique().size
 col2.metric(label="Total Observations in the Catalog",
@@ -116,8 +134,8 @@ grouped_df = df.groupby('Event').size().reset_index(name='Count')
 
 # Custom color scale for events
 event_colors = alt.Scale(
-    domain=['Binary Neutron Star', 'Binary Black Hole', 'Neutron Star - Black Hole'],  # Replace with event names
-    range=['#405aff', '#192785', '#001078']  # Replace with desired colors
+    domain=['Binary Black Hole', 'Neutron Star - Black Hole', 'Binary Neutron Star'],  # Replace with event names
+    range=['#2d2b91', '#4c4ac9', '#6f6ed4']  # Replace with desired colors
 )
 # Create the pie chart
 pie_chart = alt.Chart(grouped_df).mark_arc().encode(
@@ -247,7 +265,17 @@ if select_event:
             snr = selected_row['network_matched_filter_snr'].values[0]
             chirp = selected_row['chirp_mass'].values[0]
         else:
-            st.write("GPS Information not available for the selected event.")           
+            st.write("GPS Information not available for the selected event.")    
+
+    # Fetch data or customize content based on the event_name
+    if event_name != "default_event":
+        if event_details := load_event_details(event_name):
+            # Display event details using Streamlit components
+            st.title(f"Event Details for {event_name}")
+            st.write(event_details)
+        else:
+            st.warning("Event not found.")            
+                                 
 #CHARTS WITH USER INPUT
 if select_event:    
     st.divider()
@@ -370,7 +398,7 @@ if select_event:
     )
     #Ridgeline plots
     ridge_mass = go.Figure()
-    ridge_mass.add_trace(go.Violin(x=df['total_mass_source'], line_color='#f5f5f5', name = ''))
+    ridge_mass.add_trace(go.Violin(x=df['total_mass_source'], line_color='#808080', name = ''))
     ridge_mass.add_shape(
         dict(
             type="line",
@@ -401,7 +429,7 @@ if select_event:
     )
     #mass1 plot
     ridge_mass1 = go.Figure()
-    ridge_mass1.add_trace(go.Violin(x=df['mass_1_source'], line_color='#f5f5f5', name = ''))
+    ridge_mass1.add_trace(go.Violin(x=df['mass_1_source'], line_color='#808080', name = ''))
     ridge_mass1.add_shape(
         dict(
             type="line",
@@ -432,7 +460,7 @@ if select_event:
     )
     #mass2 plot
     ridge_mass2 = go.Figure()
-    ridge_mass2.add_trace(go.Violin(x=df['mass_2_source'], line_color='#f5f5f5', name = ''))
+    ridge_mass2.add_trace(go.Violin(x=df['mass_2_source'], line_color='#808080', name = ''))
     ridge_mass2.add_shape(
         dict(
             type="line",
@@ -464,7 +492,7 @@ if select_event:
 
     #lum_dist  plot
     ridge_dist = go.Figure()
-    ridge_dist.add_trace(go.Violin(x=df['luminosity_distance'], line_color='#f5f5f5', name = ''))
+    ridge_dist.add_trace(go.Violin(x=df['luminosity_distance'], line_color='#808080', name = ''))
     ridge_dist.add_shape(
         dict(
             type="line",
@@ -496,7 +524,7 @@ if select_event:
     
     #snr ridge plot
     ridge_snr = go.Figure()
-    ridge_snr.add_trace(go.Violin(x=df['network_matched_filter_snr'], line_color='#f5f5f5', name = ''))
+    ridge_snr.add_trace(go.Violin(x=df['network_matched_filter_snr'], line_color='#808080', name = ''))
     ridge_snr.add_shape(
         dict(
             type="line",
@@ -606,7 +634,8 @@ if select_event:
     if q_center < 5:
         q_center = 5
     qrange = (int(q_center*0.8), int(q_center*1.2))  
-    hq = ldata.q_transform(outseg=(t0-dt, t0+dt), qrange=qrange)
+    outseg = (t0 - dt, t0 + dt)
+    hq = ldata.q_transform(outseg=outseg, qrange=qrange)
     fig4 = hq.plot()
     ax = fig4.gca()
     fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
@@ -614,7 +643,7 @@ if select_event:
     ax.set_yscale('log')
     ax.set_ylim(ymin=20, ymax=1024)
         
-        #last column
+    #last column
     col12, col13 = st.columns(2)
     col12.subheader('Q-transform')            
     col12.pyplot(fig4, clear_figure=True)
@@ -631,9 +660,6 @@ if select_event:
     col13.write('Listen to what the waveform sounds like')
     col13.audio("waveform.wav")
     col13.write('The waveform is a simplified example of the gravitational waveform radiated during a compact binary coalescence using basic parameters. ')
-
-
-
 else:
     st.write("Click on a event to view more details")
 
