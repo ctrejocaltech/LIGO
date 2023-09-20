@@ -90,7 +90,7 @@ st.divider()
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    selected_cat = st.selectbox('Select an Event Catalog (Defaults to GWTC)', grouped_data.keys())
+    selected_cat = st.selectbox('Select an Event Catalog (Defaults to GWTC)', grouped_data.keys(), index=grouped_data.keys().index(event_url))
     if selected_cat in grouped_data:
         event_df = grouped_data[selected_cat]
 
