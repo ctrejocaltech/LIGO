@@ -90,7 +90,7 @@ st.divider()
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    selected_cat = st.selectbox('Select an Event Catalog (Defaults to GWTC)', grouped_data.keys(), index=grouped_data.keys().index(event_url))
+    selected_cat = st.selectbox('Select an Event Catalog (Defaults to GWTC)', grouped_data.keys())
     if selected_cat in grouped_data:
         event_df = grouped_data[selected_cat]
 
@@ -229,7 +229,7 @@ The chart allows the following interactivity:
 """
 )
 # Initialize select_event as an empty list
-select_event = ['event_url']
+select_event = []
 #User Selection
 select_event = plotly_events(event_chart, click_event=True)
 
@@ -244,7 +244,7 @@ if event_input:
         selected_y = selected_event_row['mass_2_source'].values[0]
         select_event = [{'x': selected_x, 'y': selected_y}]
     else:
-        selected_event_name = "event_url"
+        selected_event_name = ("Click on an Event")
 if select_event:
     # Retrieve clicked x and y values
     clicked_x = select_event[0]['x']
