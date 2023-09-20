@@ -13,6 +13,7 @@ import openpyxl
 import requests
 import plotly.io as pio
 from urllib.parse import parse_qs, urlparse
+from matplotlib.ticker import FuncFormatter, AutoLocator
 
 #other imports
 import matplotlib.pyplot as plt
@@ -228,7 +229,7 @@ The chart allows the following interactivity:
 """
 )
 # Initialize select_event as an empty list
-select_event = []
+select_event = ['event_url']
 #User Selection
 select_event = plotly_events(event_chart, click_event=True)
 
@@ -243,7 +244,7 @@ if event_input:
         selected_y = selected_event_row['mass_2_source'].values[0]
         select_event = [{'x': selected_x, 'y': selected_y}]
     else:
-        st.write("Selected event not found in the dataset.")
+        selected_event_name = "event_url"
 if select_event:
     # Retrieve clicked x and y values
     clicked_x = select_event[0]['x']
@@ -623,14 +624,28 @@ if select_event:
     if q_center < 5:
         q_center = 5
     qrange = (int(q_center*0.8), int(q_center*1.2))  
-    outseg = (t0 - dt, t0 + dt)
+    outseg = (t0-dt, t0+dt)
     hq = ldata.q_transform(outseg=outseg, qrange=qrange)
+    x_values = hq.times.value - t0  # Calculate the time relative to t0
     fig4 = hq.plot()
     ax = fig4.gca()
     fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
     ax.grid(False)
     ax.set_yscale('log')
     ax.set_ylim(ymin=20, ymax=1024)
+    # Set the new x-axis limits and labels
+    #ax.set_xlim(x_values.min(), x_values.max())  # Set limits based on the new x values
+    
+    # Define a custom formatting function to display two decimal places
+    #def custom_format(x, pos):
+    #    return f"{x:.2f}"
+
+    # Apply the custom formatting function to the x-axis
+    #ax.xaxis.set_major_formatter(FuncFormatter(custom_format))
+    
+    # Specify the tick locator (AutoLocator)
+    #ax.xaxis.set_major_locator(AutoLocator())
+    #ax.set_xlabel("Time from Merger (s)")  # Update the x-axis label
         
     #last column
     col12, col13 = st.columns(2)
