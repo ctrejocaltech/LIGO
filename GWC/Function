@@ -64,8 +64,6 @@ url = st.experimental_get_query_params()
 # Get specific parameter values, e.g., event_name
 event_url = url.get("event_name", ["default_event"])[0]
 
-st.write(event_url)
-
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
 def load_and_group_data():
@@ -95,6 +93,7 @@ with col1:
         event_df = grouped_data[selected_cat]
 
 col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run.')
+col1.write(event_url)
 
 # Eliminate rows with missing mass_1_source or mass_2_source
 event_df = event_df.dropna(subset=['mass_1_source', 'mass_2_source'])
