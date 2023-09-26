@@ -64,7 +64,6 @@ url = st.experimental_get_query_params()
 # Get specific parameter values, e.g., event_name
 event_url = url.get("event_name", ["default_event"])[0]
 
-st.write(event_url)
 
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data

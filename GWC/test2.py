@@ -63,7 +63,6 @@ url = st.experimental_get_query_params()
 
 # Get specific parameter values, e.g., event_name
 event_url = url.get("event_name", ["default_event"])[0]
-
 st.write(event_url)
 
 # Fetch the data from the URL and load it into a DataFrame
@@ -94,7 +93,7 @@ with col1:
     if selected_cat in grouped_data:
         event_df = grouped_data[selected_cat]
 
-col1.write('Each Catalog contains a collection of events observed during each LIGO run.')
+col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run.')
 
 # Eliminate rows with missing mass_1_source or mass_2_source
 event_df = event_df.dropna(subset=['mass_1_source', 'mass_2_source'])
@@ -110,7 +109,7 @@ count = event_df.commonName.unique().size
 col2.metric(label="Total Observations in the Catalog",
     value=(count),    
 )
-col2.write('This is the number of confident observations for the catalog selected, for a complete list of all events please visit: https://gwosc.org/eventapi/html/allevents/' )
+col2.write('This is the number of confident observations for the catalog selected, for a complete list of all events please visit: https://gwosc.org/eventapi' )
 
 # Sort mass for event type distribution
 def categorize_event(row):
@@ -128,7 +127,7 @@ grouped_df = df.groupby('Event').size().reset_index(name='Count')
 # Custom color scale for events
 event_colors = alt.Scale(
     domain=['Binary Black Hole', 'Neutron Star - Black Hole', 'Binary Neutron Star'],  # Replace with event names
-    range=['#2d2b91', '#4c4ac9', '#6f6ed4']  # Replace with desired colors
+    range=['#201e66', '#504eca', '#bdbceb']  # Replace with desired colors
 )
 # Create the pie chart
 pie_chart = alt.Chart(grouped_df).mark_arc().encode(
@@ -144,8 +143,8 @@ col3.altair_chart(pie_chart, use_container_width=True)
 col3.write('The observed events are mergers of neutron stars and/or black holes.')
 st.divider()    
 #mass chart for Dashboard
-mass_chart = alt.Chart(df, title="Total Mass Histogram").mark_bar().encode(
-    x=alt.X('total_mass_source:N', title='Total Mass', bin=True),
+mass_chart = alt.Chart(df, title="Total Mass Histogram in Solar Masses").mark_bar().encode(
+    x=alt.X('total_mass_source:N', title='Total Source Frame Mass ', bin=True),
     y=alt.Y('count()', title='Count'),
     #tooltip=['commonName', 'GPS']
 )
@@ -169,10 +168,26 @@ col4.write('Shows the distribution of mass for objects contained in the Catalog 
 col5.altair_chart(dist, use_container_width=True)
 col5.write('Shows the distribution of luminosity distance in megaparsec (3.26 million lightyears) for objects contained in the Catalog selected.')
 col6.altair_chart(snr, use_container_width=True)
-col6.write('This network SNR is the quadrature sum of the individual detector SNRs for all detectors involved in the reported trigger. ')
+col6.write('This network signal to noise ratio (SNR) is the quadrature sum of the individual detector SNRs for all detectors involved in the reported trigger. ')
 #cite from https://journals.aps.org/prx/pdf/10.1103/PhysRevX.9.031040
 st.divider()
-st.markdown('### Select an event from the catalog to learn more')
+st.markdown('### Select an event from the catalog to learn more.')
+
+# Function to filter event options based on input prefix
+def filter_event_options(prefix):
+    return df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
+
+# Get the list of event options
+event_options = filter_event_options("")
+
+# Initialize selected event name
+selected_event_name = ""
+
+# If there's an event URL, try to locate it in the dropdown options
+if event_url and event_url in event_options:
+    selected_event_name = event_url
+
+
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
     "network_matched_filter_snr": "Network SNR",
@@ -203,23 +218,15 @@ event_chart.update_yaxes(
     title_standoff=10,
     title_font = {"size": 15},
 )
-# Define the existing filtering function to filter based on prefix and event_name
-def filter_event_options(prefix, event_name):
-    # Use both prefix and event_name to filter event options
-    event_options = df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
-    
-    # If there's a specific event_name, filter further based on it
-    if event_url != "default_event":
-        event_options = [event for event in event_options if event_name in event]
 
-    return event_options
-
-event_input = st.multiselect(
+# Create the selectbox with options
+event_input = st.selectbox(
     "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
-    filter_event_options("", event_url),
-    default=[],
+    [""] + event_options,  # Add an empty option as the default
     key="event_input",
+    index=event_options.index(selected_event_name) if selected_event_name else 0  # Set the default index based on the selected_event_name
 )
+   
 st.write(
 """
 The chart allows the following interactivity:
@@ -229,22 +236,35 @@ The chart allows the following interactivity:
 """
 )
 # Initialize select_event as an empty list
-select_event = []
+select_event = [event_url]
 #User Selection
 select_event = plotly_events(event_chart, click_event=True)
 
 st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
 
 #lets user select an event by input or click
-if event_input:
-    selected_event_name = event_input[0]
+if event_input:  # Check if event_input is not empty
+    selected_event_name = event_input  # Update selected_event_name based on user input
     selected_event_row = df[df['commonName'] == selected_event_name]
+
     if not selected_event_row.empty:
         selected_x = selected_event_row['mass_1_source'].values[0]
         selected_y = selected_event_row['mass_2_source'].values[0]
         select_event = [{'x': selected_x, 'y': selected_y}]
     else:
         selected_event_name = ("Click on an Event")
+
+# Use the selected_event_name to populate the charts and data
+if selected_event_name:
+    selected_event_row = df[df['commonName'] == selected_event_name]
+
+    if not selected_event_row.empty:
+        selected_x = selected_event_row['mass_1_source'].values[0]
+        selected_y = selected_event_row['mass_2_source'].values[0]
+        select_event = [{'x': selected_x, 'y': selected_y}]
+    else:
+        selected_event_name = ("Click on an Event")
+
 if select_event:
     # Retrieve clicked x and y values
     clicked_x = select_event[0]['x']
