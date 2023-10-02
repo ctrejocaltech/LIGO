@@ -624,6 +624,6 @@ if select_event:
             col13.write(plt.plot(hp.sample_times, hc, label='Cross Polarization'))
             col13.write('Listen to what the waveform sounds like')
             col13.audio("waveform.wav")
-            col13.write('The waveform is a simplified example of the gravitational waveform radiated during a compact binary coalescence using basic parameters. ')
+            col13.write('The waveform is a simplified example of the gravitational waveform radiated during a compact binary coalescence using basic parameters. ')))
 
 st.write('To learn more about Gravitational waves please visit the [Gravitational Wave Open Science Center Learning Path](https://gwosc.org/path/)')
