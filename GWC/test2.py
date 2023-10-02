@@ -241,12 +241,6 @@ selected_event_name = ""
 
 st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
 
-# If an event_input is selected or an event_url exists, update selected_event_name
-if event_input:  # Check if event_input is not empty
-    selected_event_name = event_input
-elif event_url:  # Check if event_url exists
-    selected_event_name = event_url
-
 # Define a function to handle the selection logic
 def handle_event_selection():
     global selected_event_name
@@ -270,18 +264,9 @@ def handle_event_selection():
         else:
             selected_event_name = "Click on an Event"
 
-    # Use selected_event_name to populate the charts and data
-    selected_event_row = df[df['commonName'] == selected_event_name]
-
-    if not selected_event_row.empty:
-        selected_x = selected_event_row['mass_1_source'].values[0]
-        selected_y = selected_event_row['mass_2_source'].values[0]
-        select_event = [{'x': selected_x, 'y': selected_y}]
-    else:
-        selected_event_name = "Click on an Event"
-
 # Call the function to handle event selection
-if event_input or event_url or select_event:handle_event_selection()
+if event_input or event_url or select_event:
+    handle_event_selection()
 
 if select_event:
     # Retrieve clicked x and y values
@@ -294,7 +279,8 @@ if select_event:
     if not selected_row.empty:
         selected_common_name = selected_row["commonName"].values[0]
         event_name = selected_common_name
-        if gps_info := event_gps(event_name):
+        gps_info = event_gps(event_name)  # You need to define event_gps function
+        if gps_info:
             mass_1 = selected_row['mass_1_source'].values[0]
             mass_2 = selected_row['mass_2_source'].values[0]
             dist = selected_row['luminosity_distance'].values[0]
@@ -305,6 +291,7 @@ if select_event:
             st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
         else:
             st.write("GPS Information not available for the selected event.")
+
 
 #CHARTS WITH USER INPUT
 if select_event:    
