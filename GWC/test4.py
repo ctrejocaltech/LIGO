@@ -539,6 +539,7 @@ if select_event:
             # Define variables
             detectorlist = ['H1', 'L1', 'V1']
             dt = 0.3
+
             q_center = 100*(1/chirp_mass)
             qrange = (int(q_center*0.8), int(q_center*1.2))
             outseg = (t0-dt, t0+dt)
