@@ -171,7 +171,6 @@ def filter_event_options(prefix):
 
 # Get the current page URL
 url = st.experimental_get_query_params()
-
 # Get specific parameter values, e.g., event_name
 event_url = url.get("event_name", [""])[0]
 
@@ -179,9 +178,16 @@ event_url = url.get("event_name", [""])[0]
 event_options = filter_event_options("")
 event_input = ""
 
-# Initialize event_input with event_url
-has_event_url = event_url in df['commonName'].values
-event_input = event_url if has_event_url else ""
+# Initialize event_input with event_url if it exists in the list of event options
+if event_url in df['commonName'].values:
+    event_input = event_url
+else:
+    st.error("Error: event_name parameter not found in URL.")
+    event_input = ""
+
+# Set select_event to event_input if event_url is not found in the list of event options
+if not event_input:
+    select_event = event_input
 
 # Create the selectbox with options
 selected_event = st.selectbox(
@@ -281,12 +287,7 @@ def handle_event_selection():
         selected_event_name = "Click on an Event"
 
 # Call the function to handle event selection
-if event_input or event_url or select_event:
-    handle_event_selection()
-
-if select_event:
-    # Set select_event to event_input if it exists
-    select_event = event_input
+if event_input or event_url or select_event:handle_event_selection()
 
 if select_event:
     # Retrieve clicked x and y values
