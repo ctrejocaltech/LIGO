@@ -538,11 +538,10 @@ if select_event:
             x0=snr,
             # Define variables
             detectorlist = ['H1', 'L1', 'V1'],
-            dt = 0.3
-
-            q_center = 100*(1/chirp_mass)
-            qrange = (int(q_center*0.8), int(q_center*1.2))
-            outseg = (t0-dt, t0+dt)
+            dt = 0.3,
+            q_center = 100*(1/chirp_mass),
+            qrange = (int(q_center*0.8), int(q_center*1.2)),
+            outseg = (t0-dt, t0+dt),
             x_values = hq.times.value - t0
 
             # Define functions
