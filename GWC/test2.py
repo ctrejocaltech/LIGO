@@ -171,10 +171,8 @@ def filter_event_options(prefix):
 
 # Get the current page URL
 url = st.experimental_get_query_params()
-
 # Get specific parameter values, e.g., event_name
 event_url = url.get("event_name", [""])[0]
-
 # Get the list of event options
 event_options = filter_event_options("")
 event_input = ""
@@ -184,15 +182,15 @@ has_event_url = event_url in df['commonName'].values
 event_input = event_url if has_event_url else ""
 
 # Create the selectbox with options
-selected_event = st.selectbox(
+selected_event_name = st.selectbox(
     "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
     [event_input] + event_options,
     key="event_input",
 )
 
 # Update event_input based on user selection
-if selected_event != event_input:
-    event_input = selected_event
+if selected_event_name != event_input:
+    event_input = selected_event_name
 
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
@@ -237,25 +235,25 @@ select_event = []
 #User Selection
 select_event = plotly_events(event_chart, click_event=True)
 
-selected_event_name = ""
-
 st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
-
-# If an event_input is selected or an event_url exists, update selected_event_name
-if event_input:  # Check if event_input is not empty
-    selected_event_name = event_input
-elif event_url:  # Check if event_url exists
-    selected_event_name = event_url
 
 # Define a function to handle the selection logic
 def handle_event_selection():
     global selected_event_name
     global select_event
 
-    if event_input:
-        selected_event_name = event_input
-    elif selected_event_name:
-        pass  # Use the existing selected_event_name
+    selected_event_name = event_input or event_url or selected_event_name
+
+    if selected_event_name:
+        # Find the row in the DataFrame that matches the selected event name
+        selected_row = df.loc[df['commonName'] == selected_event_name]
+
+        if selected_row is not None:
+            selected_x = selected_row.at[selected_event_name, 'mass_1_source']
+            selected_y = selected_row.at[selected_event_name, 'mass_2_source']
+            select_event = [{'x': selected_x, 'y': selected_y}]
+        else:
+            selected_event_name = "Click on an Event"
     elif select_event:
         # Retrieve clicked x and y values
         clicked_x = select_event[0]['x']
@@ -264,24 +262,15 @@ def handle_event_selection():
         # Find the row in the DataFrame that matches the clicked x and y values
         selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
 
-        if not selected_row.empty:
+        if selected_row is not None:
             selected_common_name = selected_row["commonName"].values[0]
             selected_event_name = selected_common_name
         else:
             selected_event_name = "Click on an Event"
 
-    # Use selected_event_name to populate the charts and data
-    selected_event_row = df[df['commonName'] == selected_event_name]
-
-    if not selected_event_row.empty:
-        selected_x = selected_event_row['mass_1_source'].values[0]
-        selected_y = selected_event_row['mass_2_source'].values[0]
-        select_event = [{'x': selected_x, 'y': selected_y}]
-    else:
-        selected_event_name = "Click on an Event"
-
 # Call the function to handle event selection
-if event_input or event_url or select_event:handle_event_selection()
+if event_input or event_url or select_event:
+    handle_event_selection()
 
 if select_event:
     # Retrieve clicked x and y values
@@ -291,12 +280,12 @@ if select_event:
     # Find the row in the DataFrame that matches the clicked x and y values
     selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
 
-    if not selected_row.empty:
+    if selected_row is not None:
         selected_common_name = selected_row["commonName"].values[0]
         event_name = selected_common_name
         if gps_info := event_gps(event_name):
-            mass_1 = selected_row['mass_1_source'].values[0]
-            mass_2 = selected_row['mass_2_source'].values[0]
+            mass_1 = selected_row.at[selected_event_name, 'mass_1_source']
+            mass_2 = selected_row.at[selected_event_name, 'mass_2_source']
             dist = selected_row['luminosity_distance'].values[0]
             total_mass_source = selected_row['total_mass_source'].values[0]
             snr = selected_row['network_matched_filter_snr'].values[0]
