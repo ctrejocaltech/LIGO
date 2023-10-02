@@ -308,3 +308,30 @@ if select_event:
             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 181}},
     domain = {'x': [0, 1], 'y': [0, 1]}
     ))
+    total_mass.update_layout(
+        autosize=False,
+        width=400,
+        height=400,
+    )
+    #mass 1 gauge
+    m1_lower = selected_row['mass_1_source_lower'].values[0] + selected_row['mass_1_source'].values[0] 
+    m1_upper = selected_row['mass_1_source_upper'].values[0] + selected_row['mass_1_source'].values[0]    
+    m1 = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = mass_1,
+    number = {"suffix": "M<sub>☉</sub>"},
+    title = {'text': "Mass of source 1 (M<sub>☉</sub>)"},
+    gauge = {'axis': {'range': [None, 200]},
+            'bar': {'color': "#4751a5"},             
+            'steps' : [
+                {'range': [mass_1, m1_upper], 'color': "lightskyblue"},
+                {'range': [mass_1, m1_lower], 'color': "lightskyblue"}],             
+            'bgcolor': "white",
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 105}},
+    domain = {'x': [0, 1], 'y': [0, 1]}
+    ))
+    m1.update_layout(
+        autosize=False,
+        width=400,
+        height=400,
+    )
