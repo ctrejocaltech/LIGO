@@ -537,7 +537,7 @@ if select_event:
             type="line",
             x0=snr,
             # Define variables
-            detectorlist = ['H1', 'L1', 'V1']
+            detectorlist = ['H1', 'L1', 'V1'],
             dt = 0.3
 
             q_center = 100*(1/chirp_mass)
