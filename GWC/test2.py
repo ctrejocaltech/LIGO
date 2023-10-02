@@ -198,7 +198,16 @@ selected_event = st.selectbox(
 
 # Update event_input based on user selection
 if selected_event != event_input:
-    event_input = selected_event
+    if selected_event:
+        event_input = selected_event
+    elif select_event:
+        # Retrieve clicked x and y values
+        clicked_x = select_event[0]['x']
+        clicked_y = select_event[0]['y']
+
+        # Find the row in the DataFrame that matches the clicked x and y values
+        selected_event_name = df[(df['mass_1_source'] == clicked_x) & (df['mass_2_source'] == clicked_y)]['commonName'].values[0]
+        event_input = selected_event_name
 
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
@@ -246,12 +255,6 @@ select_event = plotly_events(event_chart, click_event=True)
 selected_event_name = ""
 
 st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
-
-# If an event_input is selected or an event_url exists, update selected_event_name
-if event_input:  # Check if event_input is not empty
-    selected_event_name = event_input
-elif event_url:  # Check if event_url exists
-    selected_event_name = event_url
 
 # Define a function to handle the selection logic
 def handle_event_selection():
