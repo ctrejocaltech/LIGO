@@ -58,12 +58,6 @@ st.set_page_config(page_title=apptitle, layout="wide")
 st.title('Gravitational-wave Transient Catalog Dashboard')
 st.write('The Gravitational-wave Transient Catalog (GWTC) is a cumulative set of gravitational wave transients maintained by the LIGO/Virgo/KAGRA collaboration. The online GWTC contains confidently-detected events from multiple data releases. For further information, please visit https://gwosc.org')
 
-# Get the current page URL
-url = st.experimental_get_query_params()
-
-# Get specific parameter values, e.g., event_name
-event_url = url.get("event_name", [""])[0]
-
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
 def load_and_group_data():
@@ -159,7 +153,6 @@ dist = alt.Chart(df, title="Luminosity Distance Histogram").mark_bar().encode(
     x=alt.X('luminosity_distance:Q', title='Distance in Mpc', bin=alt.Bin(maxbins=10)),
     y=alt.Y('count()', title='Count')
 )
-
 #SECOND ROW COLUMNS
 col4, col5, col6 = st.columns(3)
 col4.altair_chart(mass_chart, use_container_width=True)
@@ -175,6 +168,12 @@ st.markdown('### Select an event from the catalog to learn more.')
 # Function to filter event options based on input prefix
 def filter_event_options(prefix):
     return df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
+
+# Get the current page URL
+url = st.experimental_get_query_params()
+
+# Get specific parameter values, e.g., event_name
+event_url = url.get("event_name", [""])[0]
 
 # Get the list of event options
 event_options = filter_event_options("")
@@ -192,8 +191,8 @@ selected_event = st.selectbox(
 )
 
 # Update event_input based on user selection
-if selected_event != event_input:
-    event_input = selected_event
+if selected_event == event_input:
+    event_input = ("")
 
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
