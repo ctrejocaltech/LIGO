@@ -536,86 +536,153 @@ if select_event:
         dict(
             type="line",
             x0=snr,
-            # Define variables
-            detectorlist = ['H1', 'L1', 'V1'],
-            dt = 0.3,
-            q_center = 100*(1/chirp_mass),
-            qrange = (int(q_center*0.8), int(q_center*1.2)),
-            outseg = (t0-dt, t0+dt),
-            x_values = hq.times.value - t0
+            x1=snr,
+            y0=0,
+            y1=2,  # Adjust the y1 value as needed to cover the violin plot height
+            line=dict(color="#4751a5", width=3),
+        )
+    )
+    ridge_snr.update_traces(orientation='h', side='positive', width=4, points=False)
+    ridge_snr.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
+    ridge_snr.update_layout(
+        autosize=False,
+        width=400,
+        height=300,
+        annotations=[
+            dict(
+                text= "The network SNR in relation to the catalogs distribution.",
+                xref="paper",
+                yref="paper",
+                x=0.5,  # Adjust the x position for centering
+                y=-0.5,  # Adjust the y position for distance from the chart
+                showarrow=False,
+                font=dict(size=10),
+            )
+        ]
+    )
+    #Columns for Gauges
+    st.write('Largest Total Mass found to date is for Event GW190426_190642 at :red[181.5 solar masses], with the largest mass of object 1 at :red[105.5 solar masses], and the largest mass of object 2 at :red[76.5 solar masses].')
+    col7, col8, col9 = st.columns(3)
+    col7.write(total_mass)
+    col7.write(ridge_mass)
+    col8.write(m1)
+    col8.write(ridge_mass1) 
+    col9.write(m2)
+    col9.write(ridge_mass2)
+    st.divider()
+    #second column
+    col10, col11, = st.columns(2)
+    col10.write(lum_dist)
+    col10.write('The furthest merger observed to date is for Event GW190403_051519 at :red[8.28 Gpc].')
+    col10.write(ridge_dist)
+    col11.write(snr_chart)
+    col11.write('The highest SNR observed to date is for Event: GW170817 at :red[33].')
+    col11.write(ridge_snr)
+    st.divider()
+    #have users select a detector
+    detectorlist = ['H1', 'L1', 'V1']
+    detector = st.selectbox("Select a Detector, (Note: Not all events available for all detectors.)", detectorlist)
 
-            # Define functions
-            def fetch_time_series(detector, segment):
-                try:
-                    return TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
-                except Exception as e:
-                    st.error(f"Please select a valid detector: {str(e)}")
-                    return None
+    #generate waveform
+    hp, hc = get_td_waveform(approximant="IMRPhenomD",
+                            mass1=mass_1,
+                            mass2=mass_2,
+                            delta_t=1.0/16384,
+                            f_lower=45,
+                            distance=dist)
+    
+    # Convert the TimeSeries data to a numpy array
+    hp_array = np.array(hp)
+    # Scale the data to 16-bit integer values
+    hp_scaled = np.int16(hp_array / np.max(np.abs(hp_array)) * 32767)
+    # Save the waveform as a WAV file
+    wavfile.write("waveform.wav", 44100, hp_scaled)
+    
+    #Zoom in near the merger time
+    wave = plt.figure(figsize=pylab.figaspect(0.4))
+    plt.plot(hp.sample_times, hp, label='Plus Polarization')
+    plt.plot(hp.sample_times, hc, label='Cross Polarization')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Strain')
+    plt.xlim(-.5, .5)
+    plt.legend()
+    plt.grid()
+    
+    #Fetch Time Series Data
+    def fetch_time_series(detector, segment):
+        try:
+            return TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
+        except Exception as e:
+            st.error(f"Please select a valid detector: {str(e)}")
+            return None
 
-            def custom_format(x, pos):
-                return f"{x:.2f}"
+    bns = False  # Initialize bns to a default value
 
-            # Generate waveform
-            hp, hc = get_td_waveform(approximant="IMRPhenomD",
-                                    mass1=mass_1,
-                                    mass2=mass_2,
-                                    delta_t=1.0/16384,
-                                    f_lower=45,
-                                    distance=dist)
-            hp_array = np.array(hp)
-            hp_scaled = np.int16(hp_array / np.max(np.abs(hp_array)) * 32767)
-            wavfile.write("waveform.wav", 44100, hp_scaled)
+    if gps_info:
+        # Define the segment based on GPS info
+        segment = (int(gps_info) - 5, int(gps_info) + 5)
 
-            # Plot Q-transform
-            if bns:
-                dt = 2
-            ldata = fetch_time_series(detector, segment)
-            hq = ldata.q_transform(outseg=outseg, qrange=qrange)
-            fig4 = hq.plot()
-            ax = fig4.gca()
-            fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
-            ax.grid(False)
-            ax.set_yscale('log')
-            ax.set_ylim(ymin=20, ymax=1024)
-            ax.set_xlim(x_values.min(), x_values.max())
-            ax.xaxis.set_major_formatter(FuncFormatter(custom_format))
-            ax.xaxis.set_major_locator(AutoLocator())
-            ax.set_xlabel("Time from Merger (s)")
+        # Fetch time series data for the selected detector
+        ldata = fetch_time_series(detector, segment)
 
-            # Streamlit layout
-            st.write('Largest Total Mass found to date is for Event GW190426_190642 at :red[181.5 solar masses], with the largest mass of object 1 at :red[105.5 solar masses], and the largest mass of object 2 at :red[76.5 solar masses].')
-            col7, col8, col9 = st.columns(3)
-            col7.write(total_mass)
-            col7.write(ridge_mass)
-            col8.write(m1)
-            col8.write(ridge_mass1) 
-            col9.write(m2)
-            col9.write(ridge_mass2)
-            st.divider()
-            col10, col11, = st.columns(2)
-            col10.write(lum_dist)
-            col10.write('The furthest merger observed to date is for Event GW190403_051519 at :red[8.28 Gpc].')
-            col10.write(ridge_dist)
-            col11.write(snr_chart)
-            col11.write('The highest SNR observed to date is for Event: GW170817 at :red[33].')
-            col11.write(ridge_snr)
-            st.divider()
-            detector = st.selectbox("Select a Detector, (Note: Not all events available for all detectors.)", detectorlist)
-            col12, col13 = st.columns(2)
-            col12.subheader('Q-transform')            
-            col12.pyplot(fig4, clear_figure=True)
-            col12.write("""
-            A Q-transform plot shows how a signal’s frequency changes with time.
-            * The x-axis shows time
-            * The y-axis shows frequency
+        chirp_mass = selected_row['chirp_mass_source'].values[0]   
+        if chirp_mass < 5:
+            bns = True
+        else:
+            print('failed to find chirp mass')
 
-            The color scale shows the amount of “energy” or “signal power” in each time-frequency pixel.
-            """)
-            col13.subheader('Waveform')
-            col13.write(plt.plot(hp.sample_times, hp, label='Plus Polarization'))
-            col13.write(plt.plot(hp.sample_times, hc, label='Cross Polarization'))
-            col13.write('Listen to what the waveform sounds like')
-            col13.audio("waveform.wav")
-            col13.write('The waveform is a simplified example of the gravitational waveform radiated during a compact binary coalescence using basic parameters. ')))
+    if bns:
+        dt = 2
+    else:
+        dt = 0.3
+
+    t0 = datasets.event_gps(event_name)
+    q_center = 100*(1/chirp_mass)
+    if q_center < 5:
+        q_center = 5
+    qrange = (int(q_center*0.8), int(q_center*1.2))  
+    
+    outseg = (t0-dt, t0+dt)
+    hq = ldata.q_transform(outseg=outseg, qrange=qrange)
+    x_values = hq.times.value - t0  # Calculate the time relative to t0
+    fig4 = hq.plot()
+    ax = fig4.gca()
+    fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
+    ax.grid(False)
+    ax.set_yscale('log')
+    ax.set_ylim(ymin=20, ymax=1024)
+    # Set the new x-axis limits and labels
+    #ax.set_xlim(x_values.min(), x_values.max())  # Set limits based on the new x values
+    
+    # Define a custom formatting function to display two decimal places
+    #def custom_format(x, pos):
+    #    return f"{x:.2f}"
+
+    # Apply the custom formatting function to the x-axis
+    #ax.xaxis.set_major_formatter(FuncFormatter(custom_format))
+    
+    # Specify the tick locator (AutoLocator)
+    #ax.xaxis.set_major_locator(AutoLocator())
+    #ax.set_xlabel("Time from Merger (s)")  # Update the x-axis label
+        
+    #last column
+    col12, col13 = st.columns(2)
+    col12.subheader('Q-transform')            
+    col12.pyplot(fig4, clear_figure=True)
+    col12.write("""
+    A Q-transform plot shows how a signal’s frequency changes with time.
+    * The x-axis shows time
+    * The y-axis shows frequency
+
+    The color scale shows the amount of “energy” or “signal power” in each time-frequency pixel.
+    
+    """)
+    col13.subheader('Waveform')
+    col13.write(wave)
+    col13.write('Listen to what the waveform sounds like')
+    col13.audio("waveform.wav")
+    col13.write('The waveform is a simplified example of the gravitational waveform radiated during a compact binary coalescence using basic parameters. ')
+else:
+    st.write("Click on a event to view more details")
 
 st.write('To learn more about Gravitational waves please visit the [Gravitational Wave Open Science Center Learning Path](https://gwosc.org/path/)')
