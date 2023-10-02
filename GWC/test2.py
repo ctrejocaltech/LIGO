@@ -191,8 +191,8 @@ selected_event = st.selectbox(
 )
 
 # Update event_input based on user selection
-if selected_event == event_input:
-    event_input = ("")
+if selected_event != event_input:
+    event_input = selected_event
 
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
