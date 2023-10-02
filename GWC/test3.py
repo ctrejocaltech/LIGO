@@ -215,8 +215,7 @@ if event_input or event_url or select_event:
     handle_event_selection()      
 
 #CHARTS WITH USER INPUT
-#CHARTS WITH USER INPUT
-if select_event:
+if handle_event_selection:
     st.divider()
 
     # Check if event_name is not None before using it in the markdown
