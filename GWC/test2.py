@@ -186,7 +186,7 @@ event_input = event_url if has_event_url else ""
 # Create the selectbox with options
 selected_event = st.selectbox(
     "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
-    [event_input] + event_options,
+    [""] + [event_input] + event_options,
     key="event_input",
 )
 
