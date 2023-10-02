@@ -64,6 +64,8 @@ url = st.experimental_get_query_params()
 # Get specific parameter values, e.g., event_name
 event_url = url.get("event_name", ["default_event"])[0]
 
+st.write(event_url)
+
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
 def load_and_group_data():
@@ -93,7 +95,6 @@ with col1:
         event_df = grouped_data[selected_cat]
 
 col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run.')
-col1.write(event_url)
 
 # Eliminate rows with missing mass_1_source or mass_2_source
 event_df = event_df.dropna(subset=['mass_1_source', 'mass_2_source'])
@@ -131,6 +132,19 @@ def filter_event_options(prefix):
 # Get the list of event options
 event_options = filter_event_options("")
 
+# Create the selectbox with options
+event_input = st.selectbox(
+    "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
+    ["0"] + event_options,  # Add "0" as the default option
+    key="event_input",
+)
+
+# Check if the event_url exists in the DataFrame
+if event_url in df['commonName'].values:
+    event_input = event_url  # Set the event_input to the event_url value
+
+
+
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
     "network_matched_filter_snr": "Network SNR",
@@ -162,18 +176,10 @@ event_chart.update_yaxes(
     title_font = {"size": 15},
 )
 
-# Extract event_name from the event_url if it's a valid URL
-if event_url != "default_event":
-    parsed_url = urlparse(event_url)
-    query_params = parse_qs(parsed_url.query)
-    event_name_from_url = query_params.get("event_name", [])[0]
-else:
-    event_name_from_url = ""
-
 # Create the selectbox with options
 event_input = st.selectbox(
     "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
-    [event_name_from_url] + event_options if event_name_from_url else event_options,  # Add the event_name_from_url as the default if it exists
+    [""] + event_options,  # Add an empty option as the default
     key="event_input",
 )
 
@@ -243,7 +249,6 @@ if select_event:
         width=400,
         height=400,
     )
-    
-    st.write(total_mass)
+
 
 st.write('To learn more about Gravitational waves please visit the [Gravitational Wave Open Science Center Learning Path](https://gwosc.org/path/)')
