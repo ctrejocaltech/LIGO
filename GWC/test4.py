@@ -536,14 +536,6 @@ if select_event:
         dict(
             type="line",
             x0=snr,
-            import numpy as np
-            import matplotlib.pyplot as plt
-            from gwpy.timeseries import TimeSeries
-            from gwpy.plotter import Plot
-            from gwpy.frequencyseries import FrequencySeries
-            from scipy.io import wavfile
-            import streamlit as st
-
             # Define variables
             detectorlist = ['H1', 'L1', 'V1']
             dt = 0.3
