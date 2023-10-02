@@ -58,13 +58,6 @@ st.set_page_config(page_title=apptitle, layout="wide")
 st.title('Gravitational-wave Transient Catalog Dashboard')
 st.write('The Gravitational-wave Transient Catalog (GWTC) is a cumulative set of gravitational wave transients maintained by the LIGO/Virgo/KAGRA collaboration. The online GWTC contains confidently-detected events from multiple data releases. For further information, please visit https://gwosc.org')
 
-# Get the current page URL
-url = st.experimental_get_query_params()
-
-# Get specific parameter values, e.g., event_name
-event_url = url.get("event_name", ["default_event"])[0]
-st.write(event_url)
-
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
 def load_and_group_data():
@@ -84,6 +77,7 @@ def load_and_group_data():
     return grouped_data
 
 grouped_data = load_and_group_data()
+
 st.divider()
 #create top row columns for selectbox and charts
 col1, col2, col3 = st.columns(3)
@@ -104,6 +98,13 @@ updated_excel = 'updated_GWTC.xlsx'
 # Loads df to use for the rest of the dash
 df = pd.read_excel(updated_excel)
 
+# Get the current page URL
+url = st.experimental_get_query_params()
+
+# Get specific parameter values, e.g., event_name
+event_url = url.get("event_name", [""])[0]
+
+
 # Count for total observations 
 count = event_df.commonName.unique().size
 col2.metric(label="Total Observations in the Catalog",
@@ -122,56 +123,8 @@ def categorize_event(row):
 df['Event'] = df.apply(categorize_event, axis=1)
 
 # Group data by event type and count occurrences
-grouped_df = df.groupby('Event').size().reset_index(name='Count')
-
-# Custom color scale for events
-event_colors = alt.Scale(
-    domain=['Binary Black Hole', 'Neutron Star - Black Hole', 'Binary Neutron Star'],  # Replace with event names
-    range=['#201e66', '#504eca', '#bdbceb']  # Replace with desired colors
-)
-# Create the pie chart
-pie_chart = alt.Chart(grouped_df).mark_arc().encode(
-    theta=alt.Theta(field='Count', type='quantitative'),
-    color=alt.Color(field='Event', type='nominal', scale=event_colors),
-    tooltip=['Event', 'Count']
-).properties(
-    width=300,
-    height=300,
-    title='Merger Type Distribution'
-)
-col3.altair_chart(pie_chart, use_container_width=True)
-col3.write('The observed events are mergers of neutron stars and/or black holes.')
-st.divider()    
-#mass chart for Dashboard
-mass_chart = alt.Chart(df, title="Total Mass Histogram in Solar Masses").mark_bar().encode(
-    x=alt.X('total_mass_source:N', title='Total Source Frame Mass ', bin=True),
-    y=alt.Y('count()', title='Count'),
-    #tooltip=['commonName', 'GPS']
-)
-
-#Histogram for SNR
-snr = alt.Chart(df, title="Network SNR Histogram").mark_bar().encode(
-    x=alt.X('network_matched_filter_snr:Q', title='SNR', bin=True),
-    y=alt.Y('count()', title='Count')
-)
-
-#Histogram for Distance
-dist = alt.Chart(df, title="Luminosity Distance Histogram").mark_bar().encode(
-    x=alt.X('luminosity_distance:Q', title='Distance in Mpc', bin=alt.Bin(maxbins=10)),
-    y=alt.Y('count()', title='Count')
-)
-
-#SECOND ROW COLUMNS
-col4, col5, col6 = st.columns(3)
-col4.altair_chart(mass_chart, use_container_width=True)
-col4.write('Shows the distribution of mass for objects contained in the Catalog selected.')
-col5.altair_chart(dist, use_container_width=True)
-col5.write('Shows the distribution of luminosity distance in megaparsec (3.26 million lightyears) for objects contained in the Catalog selected.')
-col6.altair_chart(snr, use_container_width=True)
-col6.write('This network signal to noise ratio (SNR) is the quadrature sum of the individual detector SNRs for all detectors involved in the reported trigger. ')
-#cite from https://journals.aps.org/prx/pdf/10.1103/PhysRevX.9.031040
-st.divider()
-st.markdown('### Select an event from the catalog to learn more.')
+grouped_df = df['Event'].value_counts().reset_index()
+grouped_df.columns = ['Event', 'Count']
 
 # Function to filter event options based on input prefix
 def filter_event_options(prefix):
@@ -179,14 +132,22 @@ def filter_event_options(prefix):
 
 # Get the list of event options
 event_options = filter_event_options("")
+event_input = ""
 
-# Initialize selected event name
-selected_event_name = ""
+# Initialize event_input with event_url
+has_event_url = event_url in df['commonName'].values
+event_input = event_url if has_event_url else ""
 
-# If there's an event URL, try to locate it in the dropdown options
-if event_url and event_url in event_options:
-    selected_event_name = event_url
+# Create the selectbox with options
+selected_event = st.selectbox(
+    "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
+    [event_input] + event_options,
+    key="event_input",
+)
 
+# Update event_input based on user selection
+if selected_event != event_input:
+    event_input = selected_event
 
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
@@ -197,81 +158,38 @@ event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="networ
     "mass_2_source": "Mass 2", 
 }, title= "Event Catalog of source-frame component masses m<sub>(i)</sub>", color_continuous_scale = "dense", hover_data=["commonName"])
 
-event_chart.update_traces(
-    marker=dict(size=10,
-    symbol="circle",
-    )
-)
-event_chart.update_layout(
-    hovermode='x unified',
-    width=900,
-    height=450,
-    xaxis_title="Mass 1 (M<sub>☉</sub>)",  # Add the smaller Solar Mass symbol using <sub> tag
-    yaxis_title="Mass 2 (M<sub>☉</sub>)", 
-    hoverdistance=-1,
-)
-event_chart.update_xaxes(
-    title_standoff=10,
-    title_font = {"size": 15},
-)
-event_chart.update_yaxes(
-    title_standoff=10,
-    title_font = {"size": 15},
-)
 
-# Create the selectbox with options
-event_input = st.selectbox(
-    "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
-    [""] + event_options,  # Add an empty option as the default
-    key="event_input",
-    index=event_options.index(selected_event_name) if selected_event_name else 0  # Set the default index based on the selected_event_name
-)
-   
-st.write(
-"""
-The chart allows the following interactivity:
-- Pan and Zoom
-- Box Selection
-- Download chart as a PNG
-"""
-)
 # Initialize select_event as an empty list
-select_event = [event_url]
-#User Selection
+select_event = []
+
+# User Selection
 select_event = plotly_events(event_chart, click_event=True)
 
-st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
+selected_event_name = ""
 
-def generate_event_charts(event_name=None):
-    event_name = None  # Initialize event_name
+st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star.')
 
-    if event_name:
-        selected_event_name = event_name
-    else:
-        if event_input:  # Check if event_input is not empty
-            selected_event_name = event_input  # Update selected_event_name based on user input
-            selected_event_row = df[df['commonName'] == selected_event_name]
+# Define a function to retrieve event information
+def get_event_info(selected_row):
+    event_name = selected_row["commonName"].values[0]
+    gps_info = event_gps(event_name)
 
-            if not selected_event_row.empty:
-                selected_x = selected_event_row['mass_1_source'].values[0]
-                selected_y = selected_event_row['mass_2_source'].values[0]
-                select_event = [{'x': selected_x, 'y': selected_y}]
-            else:
-                selected_event_name = "Click on an Event"
-        else:
-            selected_event_name = "Click on an Event"
+    return event_name, gps_info
 
-    if selected_event_name != "Click on an Event":
-        selected_event_row = df[df['commonName'] == selected_event_name]
 
-        if not selected_event_row.empty:
-            selected_x = selected_event_row['mass_1_source'].values[0]
-            selected_y = selected_event_row['mass_2_source'].values[0]
-            select_event = [{'x': selected_x, 'y': selected_y}]
-        else:
-            selected_event_name = "Click on an Event"
+# Function to handle event selection
+def handle_event_selection():
+    global selected_event_name
+    global select_event
+    global event_name
+    global gps_info
 
-    if select_event:
+    event_name = None
+    gps_info = None
+
+    if event_input:
+        selected_event_name = event_input
+    elif select_event:
         # Retrieve clicked x and y values
         clicked_x = select_event[0]['x']
         clicked_y = select_event[0]['y']
@@ -280,33 +198,50 @@ def generate_event_charts(event_name=None):
         selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
 
         if not selected_row.empty:
-            selected_common_name = selected_row["commonName"].values[0]
-            event_name = selected_common_name
-            if gps_info := event_gps(event_name):
-                mass_1 = selected_row['mass_1_source'].values[0]
-                mass_2 = selected_row['mass_2_source'].values[0]
-                dist = selected_row['luminosity_distance'].values[0]
-                total_mass_source = selected_row['total_mass_source'].values[0]
-                snr = selected_row['network_matched_filter_snr'].values[0]
-                chirp = selected_row['chirp_mass'].values[0]
-            else:
-                st.write("GPS Information not available for the selected event.")  
+            event_name, gps_info = get_event_info(selected_row)
 
-    return event_name, gps_info, mass_1, mass_2, dist, total_mass_source, snr, chirp  # Return event_name at the end of the function
+    # Use selected_event_name to populate the charts and data
+    selected_event_row = df[df['commonName'] == selected_event_name]
+
+    if not selected_event_row.empty:
+        selected_x = selected_event_row['mass_1_source'].values[0]
+        selected_y = selected_event_row['mass_2_source'].values[0]
+        select_event = [{'x': selected_x, 'y': selected_y}]
+    else:
+        selected_event_name = "Click on an Event"
+
+# Call the function to handle event selection
+if event_input or event_url or select_event:
+    handle_event_selection()      
 
 #CHARTS WITH USER INPUT
-if select_event:    
+#CHARTS WITH USER INPUT
+if select_event:
     st.divider()
-    st.markdown('### EVENT METRICS for the selected event: ' + event_name)
-    st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
+
+    # Check if event_name is not None before using it in the markdown
+    if event_name is not None:
+        st.markdown('### EVENT METRICS for the selected event: ' + event_name)
+    else:
+        st.markdown('### EVENT METRICS for the selected event: No event selected')
+
+    if gps_info is not None:
+        st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
+    else:
+        st.write("GPS Information not available for the selected event.")
+
     st.write('The :red[red line |] indicates the largest value found to date for each category.')
     st.write('The :blue[[blue area]] indicates the margin of error for each source.')
     st.write('Note: Some events may not have error information.')
-    ##Gauge Indicators
-    total_mass_lower = selected_row['total_mass_source_lower'].values[0] + selected_row['total_mass_source'].values[0] 
-    total_mass_upper = selected_row['total_mass_source_upper'].values[0] + selected_row['total_mass_source'].values[0]    
-    total_mass = go.Figure(go.Indicator(
-    mode = "gauge+number",
+
+    if selected_event_name is not None:
+        selected_row = df[df['commonName'] == selected_event_name]
+        if not selected_row.empty:
+            total_mass_lower = selected_row['total_mass_source_lower'].values[0] + selected_row['total_mass_source'].values[0]
+            total_mass_upper = selected_row['total_mass_source_upper'].values[0] + selected_row['total_mass_source'].values[0]
+            total_mass = go.Figure(go.Indicator(
+                mode="gauge+number",
+            
     value = total_mass_source,
     number = {"suffix": "M<sub>☉</sub>"},
     title = {'text': "Total Mass (M<sub>☉</sub>)"},
@@ -318,7 +253,7 @@ if select_event:
             'bgcolor': "white",
             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 181}},
     domain = {'x': [0, 1], 'y': [0, 1]}
-    ))
+            ))
     total_mass.update_layout(
         autosize=False,
         width=400,
@@ -652,6 +587,7 @@ if select_event:
     if q_center < 5:
         q_center = 5
     qrange = (int(q_center*0.8), int(q_center*1.2))  
+    
     outseg = (t0-dt, t0+dt)
     hq = ldata.q_transform(outseg=outseg, qrange=qrange)
     x_values = hq.times.value - t0  # Calculate the time relative to t0

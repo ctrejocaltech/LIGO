@@ -62,8 +62,7 @@ st.write('The Gravitational-wave Transient Catalog (GWTC) is a cumulative set of
 url = st.experimental_get_query_params()
 
 # Get specific parameter values, e.g., event_name
-event_url = url.get("event_name", ["default_event"])[0]
-st.write(event_url)
+event_url = url.get("event_name", [""])[0]
 
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
@@ -179,14 +178,22 @@ def filter_event_options(prefix):
 
 # Get the list of event options
 event_options = filter_event_options("")
+event_input = ""
 
-# Initialize selected event name
-selected_event_name = ""
+# Initialize event_input with event_url
+has_event_url = event_url in df['commonName'].values
+event_input = event_url if has_event_url else ""
 
-# If there's an event URL, try to locate it in the dropdown options
-if event_url and event_url in event_options:
-    selected_event_name = event_url
+# Create the selectbox with options
+selected_event = st.selectbox(
+    "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
+    [event_input] + event_options,
+    key="event_input",
+)
 
+# Update event_input based on user selection
+if selected_event != event_input:
+    event_input = selected_event
 
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
@@ -218,15 +225,6 @@ event_chart.update_yaxes(
     title_standoff=10,
     title_font = {"size": 15},
 )
-
-# Create the selectbox with options
-event_input = st.selectbox(
-    "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
-    [""] + event_options,  # Add an empty option as the default
-    key="event_input",
-    index=event_options.index(selected_event_name) if selected_event_name else 0  # Set the default index based on the selected_event_name
-)
-   
 st.write(
 """
 The chart allows the following interactivity:
@@ -236,15 +234,44 @@ The chart allows the following interactivity:
 """
 )
 # Initialize select_event as an empty list
-select_event = [event_url]
+select_event = []
 #User Selection
 select_event = plotly_events(event_chart, click_event=True)
 
+selected_event_name = ""
+
 st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
 
-#lets user select an event by input or click
+# If an event_input is selected or an event_url exists, update selected_event_name
 if event_input:  # Check if event_input is not empty
-    selected_event_name = event_input  # Update selected_event_name based on user input
+    selected_event_name = event_input
+elif event_url:  # Check if event_url exists
+    selected_event_name = event_url
+
+# Define a function to handle the selection logic
+def handle_event_selection():
+    global selected_event_name
+    global select_event
+
+    if event_input:
+        selected_event_name = event_input
+    elif selected_event_name:
+        pass  # Use the existing selected_event_name
+    elif select_event:
+        # Retrieve clicked x and y values
+        clicked_x = select_event[0]['x']
+        clicked_y = select_event[0]['y']
+
+        # Find the row in the DataFrame that matches the clicked x and y values
+        selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
+
+        if not selected_row.empty:
+            selected_common_name = selected_row["commonName"].values[0]
+            selected_event_name = selected_common_name
+        else:
+            selected_event_name = "Click on an Event"
+
+    # Use selected_event_name to populate the charts and data
     selected_event_row = df[df['commonName'] == selected_event_name]
 
     if not selected_event_row.empty:
@@ -252,18 +279,10 @@ if event_input:  # Check if event_input is not empty
         selected_y = selected_event_row['mass_2_source'].values[0]
         select_event = [{'x': selected_x, 'y': selected_y}]
     else:
-        selected_event_name = ("Click on an Event")
+        selected_event_name = "Click on an Event"
 
-# Use the selected_event_name to populate the charts and data
-if selected_event_name:
-    selected_event_row = df[df['commonName'] == selected_event_name]
-
-    if not selected_event_row.empty:
-        selected_x = selected_event_row['mass_1_source'].values[0]
-        selected_y = selected_event_row['mass_2_source'].values[0]
-        select_event = [{'x': selected_x, 'y': selected_y}]
-    else:
-        selected_event_name = ("Click on an Event")
+# Call the function to handle event selection
+if event_input or event_url or select_event:handle_event_selection()
 
 if select_event:
     # Retrieve clicked x and y values
@@ -283,13 +302,15 @@ if select_event:
             total_mass_source = selected_row['total_mass_source'].values[0]
             snr = selected_row['network_matched_filter_snr'].values[0]
             chirp = selected_row['chirp_mass'].values[0]
+            # Continue with the code that uses gps_info here
+            st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
         else:
-            st.write("GPS Information not available for the selected event.")    
+            st.write("GPS Information not available for the selected event.")
 
 #CHARTS WITH USER INPUT
 if select_event:    
     st.divider()
-    st.markdown('### EVENT METRICS for the selected event: ' + event_name)
+    st.markdown('### EVENT METRICS for the selected event: ' + event_input)
     st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
     st.write('The :red[red line |] indicates the largest value found to date for each category.')
     st.write('The :blue[[blue area]] indicates the margin of error for each source.')
@@ -644,6 +665,7 @@ if select_event:
     if q_center < 5:
         q_center = 5
     qrange = (int(q_center*0.8), int(q_center*1.2))  
+    
     outseg = (t0-dt, t0+dt)
     hq = ldata.q_transform(outseg=outseg, qrange=qrange)
     x_values = hq.times.value - t0  # Calculate the time relative to t0
