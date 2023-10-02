@@ -198,16 +198,7 @@ selected_event = st.selectbox(
 
 # Update event_input based on user selection
 if selected_event != event_input:
-    if selected_event:
-        event_input = selected_event
-    elif select_event:
-        # Retrieve clicked x and y values
-        clicked_x = select_event[0]['x']
-        clicked_y = select_event[0]['y']
-
-        # Find the row in the DataFrame that matches the clicked x and y values
-        selected_event_name = df[(df['mass_1_source'] == clicked_x) & (df['mass_2_source'] == clicked_y)]['commonName'].values[0]
-        event_input = selected_event_name
+    event_input = selected_event
 
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
@@ -218,35 +209,6 @@ event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="networ
     "mass_2_source": "Mass 2", 
 }, title= "Event Catalog of source-frame component masses m<sub>(i)</sub>", color_continuous_scale = "dense", hover_data=["commonName"])
 
-event_chart.update_traces(
-    marker=dict(size=10,
-    symbol="circle",
-    )
-)
-event_chart.update_layout(
-    hovermode='x unified',
-    width=900,
-    height=450,
-    xaxis_title="Mass 1 (M<sub>☉</sub>)",  # Add the smaller Solar Mass symbol using <sub> tag
-    yaxis_title="Mass 2 (M<sub>☉</sub>)", 
-    hoverdistance=-1,
-)
-event_chart.update_xaxes(
-    title_standoff=10,
-    title_font = {"size": 15},
-)
-event_chart.update_yaxes(
-    title_standoff=10,
-    title_font = {"size": 15},
-)
-st.write(
-"""
-The chart allows the following interactivity:
-- Pan and Zoom
-- Box Selection
-- Download chart as a PNG
-"""
-)
 # Initialize select_event as an empty list
 select_event = []
 #User Selection
@@ -255,6 +217,12 @@ select_event = plotly_events(event_chart, click_event=True)
 selected_event_name = ""
 
 st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
+
+# If an event_input is selected or an event_url exists, update selected_event_name
+if event_input:  # Check if event_input is not empty
+    selected_event_name = event_input
+elif event_url:  # Check if event_url exists
+    selected_event_name = event_url
 
 # Define a function to handle the selection logic
 def handle_event_selection():
@@ -290,10 +258,7 @@ def handle_event_selection():
         selected_event_name = "Click on an Event"
 
 # Call the function to handle event selection
-if select_event:
-    handle_event_selection()
-elif event_input or event_url:
-    handle_event_selection()
+if event_input or event_url or select_event:handle_event_selection()
 
 if select_event:
     # Retrieve clicked x and y values
@@ -679,22 +644,24 @@ if select_event:
     
     outseg = (t0-dt, t0+dt)
     hq = ldata.q_transform(outseg=outseg, qrange=qrange)
-    x_values = hq.times.value - t0  # Calculate the time relative to t0
+    x_values = hq.times.value - t0 - dt  # Calculate the time relative to t0 and shift by dt
     fig4 = hq.plot()
     ax = fig4.gca()
     fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
     ax.grid(False)
     ax.set_yscale('log')
     ax.set_ylim(ymin=20, ymax=1024)
+    ax.set_xlim(-dt, dt)  # Set the x-axis limits to -dt to dt
+    ax.set_xlabel("Time from Merger (s)")  # Update the x-axis label
     # Set the new x-axis limits and labels
     #ax.set_xlim(x_values.min(), x_values.max())  # Set limits based on the new x values
     
-    # Define a custom formatting function to display two decimal places
-    #def custom_format(x, pos):
-    #    return f"{x:.2f}"
+    #Define a custom formatting function to display two decimal places
+    def custom_format(x, pos):
+        return f"{x:.2f}"
 
     # Apply the custom formatting function to the x-axis
-    #ax.xaxis.set_major_formatter(FuncFormatter(custom_format))
+    ax.xaxis.set_major_formatter(FuncFormatter(custom_format))
     
     # Specify the tick locator (AutoLocator)
     #ax.xaxis.set_major_locator(AutoLocator())
