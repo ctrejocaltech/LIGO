@@ -256,9 +256,7 @@ def get_selected_event_info(event_input, select_event):
                 total_mass_source = selected_event_row['total_mass_source'].values[0]
                 snr = selected_event_row['network_matched_filter_snr'].values[0]
                 chirp = selected_event_row['chirp_mass'].values[0]            
-        else:
-            selected_event_name = ("Click on an Event")
-    elif select_event:
+    if select_event:
         # Retrieve clicked x and y values
         clicked_x = select_event[0]['x']
         clicked_y = select_event[0]['y']
