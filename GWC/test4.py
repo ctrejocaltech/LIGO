@@ -281,7 +281,7 @@ def get_selected_event_info(event_input, select_event):
 
 
 #CHARTS WITH USER INPUT
-if get_selected_event_info(event_input, select_event):    
+if select_event or event_input:    
     st.divider()
     event_name, gps_info, selected_row, total_mass_source, mass_1, mass_2, dist, snr, chirp = get_selected_event_info(event_input, select_event)
     st.markdown('### EVENT METRICS for the selected event: ' + event_name)
