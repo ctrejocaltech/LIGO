@@ -210,8 +210,7 @@ def filter_event_options(prefix):
 event_options = filter_event_options("")
 if event_url in df['commonName'].tolist():
     event_input = [event_url]
-else:
-    event_input = ""
+
 
 # Create the selectbox with options
 event_input = st.selectbox(
