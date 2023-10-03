@@ -242,6 +242,7 @@ select_event = plotly_events(event_chart, click_event=True)
 st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
 
 def get_selected_event_info(event_input, select_event):
+    gps_info = None
     if event_input:
         event_name = event_input[0]
         selected_event_row = df[df['commonName'] == event_name]
