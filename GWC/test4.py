@@ -250,12 +250,12 @@ def get_selected_event_info(event_input, select_event):
             selected_y = selected_event_row['mass_2_source'].values[0]
             select_event = [{'x': selected_x, 'y': selected_y}]
             if gps_info := event_gps(event_name):
-                mass_1 = selected_row['mass_1_source'].values[0]
-                mass_2 = selected_row['mass_2_source'].values[0]
-                dist = selected_row['luminosity_distance'].values[0]
-                total_mass_source = selected_row['total_mass_source'].values[0]
-                snr = selected_row['network_matched_filter_snr'].values[0]
-                chirp = selected_row['chirp_mass'].values[0]            
+                mass_1 = selected_event_row['mass_1_source'].values[0]
+                mass_2 = selected_event_row['mass_2_source'].values[0]
+                dist = selected_event_row['luminosity_distance'].values[0]
+                total_mass_source = selected_event_row['total_mass_source'].values[0]
+                snr = selected_event_row['network_matched_filter_snr'].values[0]
+                chirp = selected_event_row['chirp_mass'].values[0]            
         else:
             selected_event_name = ("Click on an Event")
     elif select_event:
@@ -277,7 +277,7 @@ def get_selected_event_info(event_input, select_event):
                 snr = selected_row['network_matched_filter_snr'].values[0]
                 chirp = selected_row['chirp_mass'].values[0]
             else:
-                st.write("GPS Information not available for the selected event.")
+                st.write("Click on an Event.")
     return event_name, gps_info, selected_row, total_mass_source, mass_1, mass_2, dist, snr, chirp
 
 
