@@ -251,7 +251,7 @@ def get_selected_event_info(event_input, select_event):
             select_event = [{'x': selected_x, 'y': selected_y}]
         else:
             selected_event_name = ("Click on an Event")
-    if select_event:
+    elif select_event:
         # Retrieve clicked x and y values
         clicked_x = select_event[0]['x']
         clicked_y = select_event[0]['y']
