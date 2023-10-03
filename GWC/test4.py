@@ -646,12 +646,13 @@ if select_event:
     hq = ldata.q_transform(outseg=outseg, qrange=qrange)
 
     # Debug: Print ldata and times
-    print("ldata:", ldata)
-    print("ldata times:", ldata.times)
+    st.write("ldata:", ldata)
+    st.write("ldata times:", ldata.times)
 
     x_values = hq.times.value - t0 - dt  # Calculate the time relative to t0 and shift by dt
     fig4 = hq.plot()
     ax = fig4.gca()
+    x_values = hq.times.value - t0
     
     #last column
     col12, col13 = st.columns(2)
