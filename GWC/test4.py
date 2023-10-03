@@ -301,7 +301,7 @@ def handle_event_selection():
 if event_input or event_url or select_event or selected_event:  # Modified line
     handle_event_selection()  # Modified line
 
-if select_event or selected_event:  # Modified line
+if select_event or selected_event or event_url or event_input:  # Modified line
     if selected_event:  # Modified line
         event_name = selected_event  # Modified line
     else:
