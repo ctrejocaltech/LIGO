@@ -278,6 +278,14 @@ def handle_event_selection():
             selected_event_name = selected_common_name
         else:
             selected_event_name = "Click on an Event"
+    elif event_url:
+        # Extract the event name from the URL
+        event_name = extract_event_name(event_url)
+
+        if event_name in event_options:
+            selected_event_name = event_name
+        else:
+            selected_event_name = "Click on an Event"
 
     # Use selected_event_name to populate the charts and data
     selected_event_row = df[df['commonName'] == selected_event_name]
@@ -362,7 +370,7 @@ if select_event or selected_event:  # Modified line
 #CHARTS WITH USER INPUT
 if select_event:    
     st.divider()
-    st.markdown('### EVENT METRICS for the selected event: ' + event_input)
+    st.markdown('### EVENT METRICS for the selected event: ' + event_name)
     st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
     st.write('The :red[red line |] indicates the largest value found to date for each category.')
     st.write('The :blue[[blue area]] indicates the margin of error for each source.')
