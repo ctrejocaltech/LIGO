@@ -179,26 +179,7 @@ event_options = filter_event_options("")
 event_input = ""
 
 # Initialize event_input with event_url if it exists in the list of event options
-if event_url in df['commonName'].values:
-    event_input = event_url
-else:
-    st.error("Error: event_name parameter not found in URL.")
-    event_input = ""
-
-# Set select_event to event_input if event_url is not found in the list of event options
-if not event_input:
-    select_event = event_input
-
-# Create the selectbox with options
-selected_event = st.selectbox(
-    "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
-    [event_input] + [""] + event_options,
-    key="event_input",
-)
-
-# Update event_input based on user selection
-if selected_event != event_input:
-    event_input = selected_event
+event_input = event_url if event_url in df['commonName'].values else ""
 
 #MAIN CHART FOR USER INPUT
 event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
@@ -217,6 +198,18 @@ select_event = plotly_events(event_chart, click_event=True)
 selected_event_name = ""
 
 st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
+
+# Create the selectbox with options
+selected_event = st.selectbox(
+    "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
+    [event_input] + [""] + event_options,
+    key="event_input",
+)
+
+# Update event_input based on user selection
+if selected_event != event_input:
+    event_input = selected_event
+
 
 # If an event_input is selected or an event_url exists, update selected_event_name
 if event_input:  # Check if event_input is not empty
@@ -258,12 +251,22 @@ def handle_event_selection():
         selected_event_name = "Click on an Event"
 
 # Call the function to handle event selection
-if event_input or event_url or select_event:handle_event_selection()
+if event_input or event_url or select_event:
+    handle_event_selection()
 
-if select_event:
-    # Retrieve clicked x and y values
-    clicked_x = select_event[0]['x']
-    clicked_y = select_event[0]['y']
+if select_event or event_input or event_url:
+    if select_event:
+        # Retrieve clicked x and y values
+        clicked_x = select_event[0]['x']
+        clicked_y = select_event[0]['y']
+    elif event_input:
+        selected_row = df[df["commonName"] == event_input]
+        clicked_x = selected_row["mass_1_source"].values[0]
+        clicked_y = selected_row["mass_2_source"].values[0]
+    elif event_url:
+        selected_row = df[df["commonName"] == event_url]
+        clicked_x = selected_row["mass_1_source"].values[0]
+        clicked_y = selected_row["mass_2_source"].values[0]
 
     # Find the row in the DataFrame that matches the clicked x and y values
     selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
@@ -284,7 +287,7 @@ if select_event:
             st.write("GPS Information not available for the selected event.")
 
 #CHARTS WITH USER INPUT
-if select_event:    
+if select_event or event_input or event_url:    
     st.divider()
     st.markdown('### EVENT METRICS for the selected event: ' + event_input)
     st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
