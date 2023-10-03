@@ -244,7 +244,7 @@ st.write('Compare the masses between both sources, along with the strength in Ne
 def get_selected_event_info(event_input, select_event):
     if event_input:
         event_name = event_input[0]
-        selected_event_row = df[df['commonName'] == selected_event_name]
+        selected_event_row = df[df['commonName'] == event_name]
         if not selected_event_row.empty:
             selected_x = selected_event_row['mass_1_source'].values[0]
             selected_y = selected_event_row['mass_2_source'].values[0]
