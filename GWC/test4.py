@@ -328,283 +328,283 @@ if select_event or selected_event or event_url or event_input:  # Modified line
                 st.write("GPS Information not available for the selected event.")
 
 
-#CHARTS WITH USER INPUT
-if select_event or selected_event or event_url or event_input:   
-    st.divider()
-    st.markdown('### EVENT METRICS for the selected event: ' + event_name)
-    st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
-    st.write('The :red[red line |] indicates the largest value found to date for each category.')
-    st.write('The :blue[[blue area]] indicates the margin of error for each source.')
-    st.write('Note: Some events may not have error information.')
-    ##Gauge Indicators
-    total_mass_lower = selected_row['total_mass_source_lower'].values[0] + selected_row['total_mass_source'].values[0] 
-    total_mass_upper = selected_row['total_mass_source_upper'].values[0] + selected_row['total_mass_source'].values[0]    
-    total_mass = go.Figure(go.Indicator(
-    mode = "gauge+number",
-    value = total_mass_source,
-    number = {"suffix": "M<sub>☉</sub>"},
-    title = {'text': "Total Mass (M<sub>☉</sub>)"},
-    gauge = {'axis': {'range': [None, 250]},
-            'bar': {'color': "#4751a5"},             
-            'steps' : [
-                {'range': [total_mass_source, total_mass_upper], 'color': "lightskyblue"},
-                {'range': [total_mass_source, total_mass_lower], 'color': "lightskyblue"}],             
-            'bgcolor': "white",
-            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 181}},
-    domain = {'x': [0, 1], 'y': [0, 1]}
-    ))
-    total_mass.update_layout(
-        autosize=False,
-        width=400,
-        height=400,
-    )
-    #mass 1 gauge
-    m1_lower = selected_row['mass_1_source_lower'].values[0] + selected_row['mass_1_source'].values[0] 
-    m1_upper = selected_row['mass_1_source_upper'].values[0] + selected_row['mass_1_source'].values[0]    
-    m1 = go.Figure(go.Indicator(
-    mode = "gauge+number",
-    value = mass_1,
-    number = {"suffix": "M<sub>☉</sub>"},
-    title = {'text': "Mass of source 1 (M<sub>☉</sub>)"},
-    gauge = {'axis': {'range': [None, 200]},
-            'bar': {'color': "#4751a5"},             
-            'steps' : [
-                {'range': [mass_1, m1_upper], 'color': "lightskyblue"},
-                {'range': [mass_1, m1_lower], 'color': "lightskyblue"}],             
-            'bgcolor': "white",
-            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 105}},
-    domain = {'x': [0, 1], 'y': [0, 1]}
-    ))
-    m1.update_layout(
-        autosize=False,
-        width=400,
-        height=400,
-    )
-    #mass 2 gauge
-    m2_lower = selected_row['mass_2_source_lower'].values[0] + selected_row['mass_2_source'].values[0] 
-    m2_upper = selected_row['mass_2_source_upper'].values[0] + selected_row['mass_2_source'].values[0]    
-    m2 = go.Figure(go.Indicator(
-    mode = "gauge+number",
-    value = mass_2,
-    number = {"suffix": "M<sub>☉</sub>"},
-    title = {'text': "Mass of source 2 (M<sub>☉</sub>)"},
-    gauge = {'axis': {'range': [None, 180]},  
-            'bar': {'color': "#4751a5"},         
-            'steps' : [
-                {'range': [mass_2, m2_upper], 'color': "lightskyblue"},
-                {'range': [mass_2, m2_lower], 'color': "lightskyblue"}],
-            'bgcolor': "white",           
-            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 76}},
-    domain = {'x': [0, 1], 'y': [0, 1]}
-    ))
-    m2.update_layout(
-        autosize=False,
-        width=400,
-        height=400,
-    )
-    #lum dist gauge
-    lum_dist_lower = selected_row['luminosity_distance_lower'].values[0] + selected_row['luminosity_distance'].values[0] 
-    lum_dist_upper = selected_row['luminosity_distance_upper'].values[0] + selected_row['luminosity_distance'].values[0]        
-    #Convert lum_dist from Mpc to Gpc 
-    dist = dist/1000
-    lum_dist_lower = lum_dist_lower/1000
-    lum_dist_upper = lum_dist_upper/1000 
-    lum_dist = go.Figure(go.Indicator(
-    mode = "gauge+number",
-    value = dist,
-    number = {"suffix": "Gpc"},
-    title = {'text': "Luminosity Distance (Gpc)"},
-    gauge = {'axis': {'range': [None, 18]},
-            'bar': {'color': "#4751a5"},
-            'steps' : [
-                {'range': [dist, lum_dist_upper], 'color': "lightskyblue"},
-                {'range': [dist, lum_dist_lower], 'color': "lightskyblue"}],             
-            'bgcolor': "white",
-            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 8.28}},
-    domain = {'x': [0, 1], 'y': [0, 1]}
-    ))
-    lum_dist.update_layout(
-        autosize=False,
-        width=400,
-        height=400,
-    )
-    #snr gauge
-    snr_lower = selected_row['network_matched_filter_snr_lower'].values[0] + selected_row['network_matched_filter_snr'].values[0] 
-    snr_upper = selected_row['network_matched_filter_snr_upper'].values[0] + selected_row['network_matched_filter_snr'].values[0]
-    snr_chart = go.Figure(go.Indicator(
-    mode = "gauge+number",
-    value = snr, 
-    title = {'text': "Network Matched Filter SNR"},
-    gauge = {'axis': {'range': [None, 40]},
-            'steps' : [
-                {'range': [snr, snr_upper], 'color': "lightskyblue"},
-                {'range': [snr, snr_lower], 'color': "lightskyblue"}],
-            'bar': {'color': "#4751a5"},
-            'bgcolor': "white",
-            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 33}},      
-    ))
-    snr_chart.update_layout(
-    autosize=False,
-    width=400,
-    height=400,
-    )
-    #Ridgeline plots
-    ridge_mass = go.Figure()
-    ridge_mass.add_trace(go.Violin(x=df['total_mass_source'], line_color='#808080', name = ''))
-    ridge_mass.add_shape(
-        dict(
-            type="line",
-            x0=total_mass_source,
-            x1=total_mass_source,
-            y0=0,
-            y1=2,  # Adjust the y1 value as needed to cover the violin plot height
-            line=dict(color="#4751a5", width=3),
+    #CHARTS WITH USER INPUT
+    if select_event or selected_event or event_url or event_input:   
+        st.divider()
+        st.markdown('### EVENT METRICS for the selected event: ' + event_name)
+        st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
+        st.write('The :red[red line |] indicates the largest value found to date for each category.')
+        st.write('The :blue[[blue area]] indicates the margin of error for each source.')
+        st.write('Note: Some events may not have error information.')
+        ##Gauge Indicators
+        total_mass_lower = selected_row['total_mass_source_lower'].values[0] + selected_row['total_mass_source'].values[0] 
+        total_mass_upper = selected_row['total_mass_source_upper'].values[0] + selected_row['total_mass_source'].values[0]    
+        total_mass = go.Figure(go.Indicator(
+        mode = "gauge+number",
+        value = total_mass_source,
+        number = {"suffix": "M<sub>☉</sub>"},
+        title = {'text': "Total Mass (M<sub>☉</sub>)"},
+        gauge = {'axis': {'range': [None, 250]},
+                'bar': {'color': "#4751a5"},             
+                'steps' : [
+                    {'range': [total_mass_source, total_mass_upper], 'color': "lightskyblue"},
+                    {'range': [total_mass_source, total_mass_lower], 'color': "lightskyblue"}],             
+                'bgcolor': "white",
+                'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 181}},
+        domain = {'x': [0, 1], 'y': [0, 1]}
+        ))
+        total_mass.update_layout(
+            autosize=False,
+            width=400,
+            height=400,
         )
-    )
-    ridge_mass.update_traces(orientation='h', side='positive', width=4, points=False)
-    ridge_mass.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
-    ridge_mass.update_layout(
-        autosize=False,
-        width=400,
-        height=300,
-        annotations=[
-            dict(
-                text= "Total mass of " + event_name + " in relation to the catalogs mass distribution in solar mass.",
-                xref="paper",
-                yref="paper",
-                x=0.5,  # Adjust the x position for centering
-                y=-0.5,  # Adjust the y position for distance from the chart
-                showarrow=False,
-                font=dict(size=10),
-            )
-        ]
-    )
-    #mass1 plot
-    ridge_mass1 = go.Figure()
-    ridge_mass1.add_trace(go.Violin(x=df['mass_1_source'], line_color='#808080', name = ''))
-    ridge_mass1.add_shape(
-        dict(
-            type="line",
-            x0=mass_1,
-            x1=mass_1,
-            y0=0,
-            y1=2,  # Adjust the y1 value as needed to cover the violin plot height
-            line=dict(color="#4751a5", width=3),
+        #mass 1 gauge
+        m1_lower = selected_row['mass_1_source_lower'].values[0] + selected_row['mass_1_source'].values[0] 
+        m1_upper = selected_row['mass_1_source_upper'].values[0] + selected_row['mass_1_source'].values[0]    
+        m1 = go.Figure(go.Indicator(
+        mode = "gauge+number",
+        value = mass_1,
+        number = {"suffix": "M<sub>☉</sub>"},
+        title = {'text': "Mass of source 1 (M<sub>☉</sub>)"},
+        gauge = {'axis': {'range': [None, 200]},
+                'bar': {'color': "#4751a5"},             
+                'steps' : [
+                    {'range': [mass_1, m1_upper], 'color': "lightskyblue"},
+                    {'range': [mass_1, m1_lower], 'color': "lightskyblue"}],             
+                'bgcolor': "white",
+                'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 105}},
+        domain = {'x': [0, 1], 'y': [0, 1]}
+        ))
+        m1.update_layout(
+            autosize=False,
+            width=400,
+            height=400,
         )
-    )
-    ridge_mass1.update_traces(orientation='h', side='positive', width=4, points=False)
-    ridge_mass1.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
-    ridge_mass1.update_layout(
-        autosize=False,
-        width=400,
-        height=300,
-        annotations=[
-            dict(
-                text= "The mass of source 1 in relation to the catalogs mass 1 distribution in solar mass.",
-                xref="paper",
-                yref="paper",
-                x=0.5,  # Adjust the x position for centering
-                y=-0.5,  # Adjust the y position for distance from the chart
-                showarrow=False,
-                font=dict(size=10),
-            )
-        ]
-    )
-    #mass2 plot
-    ridge_mass2 = go.Figure()
-    ridge_mass2.add_trace(go.Violin(x=df['mass_2_source'], line_color='#808080', name = ''))
-    ridge_mass2.add_shape(
-        dict(
-            type="line",
-            x0=mass_2,
-            x1=mass_2,
-            y0=0,
-            y1=2,  # Adjust the y1 value as needed to cover the violin plot height
-            line=dict(color="#4751a5", width=3),
+        #mass 2 gauge
+        m2_lower = selected_row['mass_2_source_lower'].values[0] + selected_row['mass_2_source'].values[0] 
+        m2_upper = selected_row['mass_2_source_upper'].values[0] + selected_row['mass_2_source'].values[0]    
+        m2 = go.Figure(go.Indicator(
+        mode = "gauge+number",
+        value = mass_2,
+        number = {"suffix": "M<sub>☉</sub>"},
+        title = {'text': "Mass of source 2 (M<sub>☉</sub>)"},
+        gauge = {'axis': {'range': [None, 180]},  
+                'bar': {'color': "#4751a5"},         
+                'steps' : [
+                    {'range': [mass_2, m2_upper], 'color': "lightskyblue"},
+                    {'range': [mass_2, m2_lower], 'color': "lightskyblue"}],
+                'bgcolor': "white",           
+                'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 76}},
+        domain = {'x': [0, 1], 'y': [0, 1]}
+        ))
+        m2.update_layout(
+            autosize=False,
+            width=400,
+            height=400,
         )
-    )
-    ridge_mass2.update_traces(orientation='h', side='positive', width=4, points=False)
-    ridge_mass2.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
-    ridge_mass2.update_layout(
+        #lum dist gauge
+        lum_dist_lower = selected_row['luminosity_distance_lower'].values[0] + selected_row['luminosity_distance'].values[0] 
+        lum_dist_upper = selected_row['luminosity_distance_upper'].values[0] + selected_row['luminosity_distance'].values[0]        
+        #Convert lum_dist from Mpc to Gpc 
+        dist = dist/1000
+        lum_dist_lower = lum_dist_lower/1000
+        lum_dist_upper = lum_dist_upper/1000 
+        lum_dist = go.Figure(go.Indicator(
+        mode = "gauge+number",
+        value = dist,
+        number = {"suffix": "Gpc"},
+        title = {'text': "Luminosity Distance (Gpc)"},
+        gauge = {'axis': {'range': [None, 18]},
+                'bar': {'color': "#4751a5"},
+                'steps' : [
+                    {'range': [dist, lum_dist_upper], 'color': "lightskyblue"},
+                    {'range': [dist, lum_dist_lower], 'color': "lightskyblue"}],             
+                'bgcolor': "white",
+                'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 8.28}},
+        domain = {'x': [0, 1], 'y': [0, 1]}
+        ))
+        lum_dist.update_layout(
+            autosize=False,
+            width=400,
+            height=400,
+        )
+        #snr gauge
+        snr_lower = selected_row['network_matched_filter_snr_lower'].values[0] + selected_row['network_matched_filter_snr'].values[0] 
+        snr_upper = selected_row['network_matched_filter_snr_upper'].values[0] + selected_row['network_matched_filter_snr'].values[0]
+        snr_chart = go.Figure(go.Indicator(
+        mode = "gauge+number",
+        value = snr, 
+        title = {'text': "Network Matched Filter SNR"},
+        gauge = {'axis': {'range': [None, 40]},
+                'steps' : [
+                    {'range': [snr, snr_upper], 'color': "lightskyblue"},
+                    {'range': [snr, snr_lower], 'color': "lightskyblue"}],
+                'bar': {'color': "#4751a5"},
+                'bgcolor': "white",
+                'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 33}},      
+        ))
+        snr_chart.update_layout(
         autosize=False,
         width=400,
-        height=300,
-        annotations=[
+        height=400,
+        )
+        #Ridgeline plots
+        ridge_mass = go.Figure()
+        ridge_mass.add_trace(go.Violin(x=df['total_mass_source'], line_color='#808080', name = ''))
+        ridge_mass.add_shape(
             dict(
-                text= "The mass of source 2 in relation to the catalogs mass 2 distribution in solar mass.",
-                xref="paper",
-                yref="paper",
-                x=0.5,  # Adjust the x position for centering
-                y=-0.5,  # Adjust the y position for distance from the chart
-                showarrow=False,
-                font=dict(size=10),
+                type="line",
+                x0=total_mass_source,
+                x1=total_mass_source,
+                y0=0,
+                y1=2,  # Adjust the y1 value as needed to cover the violin plot height
+                line=dict(color="#4751a5", width=3),
             )
-        ]
-    )
+        )
+        ridge_mass.update_traces(orientation='h', side='positive', width=4, points=False)
+        ridge_mass.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
+        ridge_mass.update_layout(
+            autosize=False,
+            width=400,
+            height=300,
+            annotations=[
+                dict(
+                    text= "Total mass of " + event_name + " in relation to the catalogs mass distribution in solar mass.",
+                    xref="paper",
+                    yref="paper",
+                    x=0.5,  # Adjust the x position for centering
+                    y=-0.5,  # Adjust the y position for distance from the chart
+                    showarrow=False,
+                    font=dict(size=10),
+                )
+            ]
+        )
+        #mass1 plot
+        ridge_mass1 = go.Figure()
+        ridge_mass1.add_trace(go.Violin(x=df['mass_1_source'], line_color='#808080', name = ''))
+        ridge_mass1.add_shape(
+            dict(
+                type="line",
+                x0=mass_1,
+                x1=mass_1,
+                y0=0,
+                y1=2,  # Adjust the y1 value as needed to cover the violin plot height
+                line=dict(color="#4751a5", width=3),
+            )
+        )
+        ridge_mass1.update_traces(orientation='h', side='positive', width=4, points=False)
+        ridge_mass1.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
+        ridge_mass1.update_layout(
+            autosize=False,
+            width=400,
+            height=300,
+            annotations=[
+                dict(
+                    text= "The mass of source 1 in relation to the catalogs mass 1 distribution in solar mass.",
+                    xref="paper",
+                    yref="paper",
+                    x=0.5,  # Adjust the x position for centering
+                    y=-0.5,  # Adjust the y position for distance from the chart
+                    showarrow=False,
+                    font=dict(size=10),
+                )
+            ]
+        )
+        #mass2 plot
+        ridge_mass2 = go.Figure()
+        ridge_mass2.add_trace(go.Violin(x=df['mass_2_source'], line_color='#808080', name = ''))
+        ridge_mass2.add_shape(
+            dict(
+                type="line",
+                x0=mass_2,
+                x1=mass_2,
+                y0=0,
+                y1=2,  # Adjust the y1 value as needed to cover the violin plot height
+                line=dict(color="#4751a5", width=3),
+            )
+        )
+        ridge_mass2.update_traces(orientation='h', side='positive', width=4, points=False)
+        ridge_mass2.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
+        ridge_mass2.update_layout(
+            autosize=False,
+            width=400,
+            height=300,
+            annotations=[
+                dict(
+                    text= "The mass of source 2 in relation to the catalogs mass 2 distribution in solar mass.",
+                    xref="paper",
+                    yref="paper",
+                    x=0.5,  # Adjust the x position for centering
+                    y=-0.5,  # Adjust the y position for distance from the chart
+                    showarrow=False,
+                    font=dict(size=10),
+                )
+            ]
+        )
 
-    #lum_dist  plot
-    ridge_dist = go.Figure()
-    ridge_dist.add_trace(go.Violin(x=df['luminosity_distance'], line_color='#808080', name = ''))
-    ridge_dist.add_shape(
-        dict(
-            type="line",
-            x0=dist,
-            x1=dist,
-            y0=0,
-            y1=2,  # Adjust the y1 value as needed to cover the violin plot height
-            line=dict(color="#4751a5", width=3),
-        )
-    )
-    ridge_dist.update_traces(orientation='h', side='positive', width=4, points=False)
-    ridge_dist.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
-    ridge_dist.update_layout(
-        autosize=False,
-        width=400,
-        height=300,
-        annotations=[
+        #lum_dist  plot
+        ridge_dist = go.Figure()
+        ridge_dist.add_trace(go.Violin(x=df['luminosity_distance'], line_color='#808080', name = ''))
+        ridge_dist.add_shape(
             dict(
-                text= "The luminosity distance in relation to the catalogs range in Gpc.",
-                xref="paper",
-                yref="paper",
-                x=0.5,  # Adjust the x position for centering
-                y=-0.5,  # Adjust the y position for distance from the chart
-                showarrow=False,
-                font=dict(size=10),
+                type="line",
+                x0=dist,
+                x1=dist,
+                y0=0,
+                y1=2,  # Adjust the y1 value as needed to cover the violin plot height
+                line=dict(color="#4751a5", width=3),
             )
-        ]
-    )
-    
-    #snr ridge plot
-    ridge_snr = go.Figure()
-    ridge_snr.add_trace(go.Violin(x=df['network_matched_filter_snr'], line_color='#808080', name = ''))
-    ridge_snr.add_shape(
-        dict(
-            type="line",
-            x0=snr,
-            x1=snr,
-            y0=0,
-            y1=2,  # Adjust the y1 value as needed to cover the violin plot height
-            line=dict(color="#4751a5", width=3),
         )
-    )
-    ridge_snr.update_traces(orientation='h', side='positive', width=4, points=False)
-    ridge_snr.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
-    ridge_snr.update_layout(
-        autosize=False,
-        width=400,
-        height=300,
-        annotations=[
+        ridge_dist.update_traces(orientation='h', side='positive', width=4, points=False)
+        ridge_dist.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
+        ridge_dist.update_layout(
+            autosize=False,
+            width=400,
+            height=300,
+            annotations=[
+                dict(
+                    text= "The luminosity distance in relation to the catalogs range in Gpc.",
+                    xref="paper",
+                    yref="paper",
+                    x=0.5,  # Adjust the x position for centering
+                    y=-0.5,  # Adjust the y position for distance from the chart
+                    showarrow=False,
+                    font=dict(size=10),
+                )
+            ]
+        )
+        
+        #snr ridge plot
+        ridge_snr = go.Figure()
+        ridge_snr.add_trace(go.Violin(x=df['network_matched_filter_snr'], line_color='#808080', name = ''))
+        ridge_snr.add_shape(
             dict(
-                text= "The network SNR in relation to the catalogs distribution.",
-                xref="paper",
-                yref="paper",
-                x=0.5,  # Adjust the x position for centering
-                y=-0.5,  # Adjust the y position for distance from the chart
-                showarrow=False,
-                font=dict(size=10),
+                type="line",
+                x0=snr,
+                x1=snr,
+                y0=0,
+                y1=2,  # Adjust the y1 value as needed to cover the violin plot height
+                line=dict(color="#4751a5", width=3),
             )
-        ]
-    )
+        )
+        ridge_snr.update_traces(orientation='h', side='positive', width=4, points=False)
+        ridge_snr.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
+        ridge_snr.update_layout(
+            autosize=False,
+            width=400,
+            height=300,
+            annotations=[
+                dict(
+                    text= "The network SNR in relation to the catalogs distribution.",
+                    xref="paper",
+                    yref="paper",
+                    x=0.5,  # Adjust the x position for centering
+                    y=-0.5,  # Adjust the y position for distance from the chart
+                    showarrow=False,
+                    font=dict(size=10),
+                )
+            ]
+        )
     #Columns for Gauges
     st.write('Largest Total Mass found to date is for Event GW190426_190642 at :red[181.5 solar masses], with the largest mass of object 1 at :red[105.5 solar masses], and the largest mass of object 2 at :red[76.5 solar masses].')
     col7, col8, col9 = st.columns(3)
