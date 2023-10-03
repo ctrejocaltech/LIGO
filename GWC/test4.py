@@ -629,7 +629,7 @@ if select_event:
         if chirp_mass < 5:
             bns = True
         else:
-            print('Failed to find chirp mass')
+            print('failed to find chirp mass')
 
     if bns:
         dt = 2
@@ -637,24 +637,31 @@ if select_event:
         dt = 0.3
 
     t0 = datasets.event_gps(event_name)
-    q_center = 100 * (1 / chirp_mass)
+    q_center = 100*(1/chirp_mass)
     if q_center < 5:
         q_center = 5
-    qrange = (int(q_center * 0.8), int(q_center * 1.2))  
-
-    outseg = (t0 - dt, t0 + dt)
+    qrange = (int(q_center*0.8), int(q_center*1.2))  
+    
+    outseg = (t0-dt, t0+dt)
     hq = ldata.q_transform(outseg=outseg, qrange=qrange)
-
-    # Debug: Print ldata and times
-    st.write("ldata:", ldata)
-    st.write("ldata times:", ldata.times)
-
     x_values = hq.times.value - t0 - dt  # Calculate the time relative to t0 and shift by dt
     fig4 = hq.plot()
     ax = fig4.gca()
-    ax.set_xlim(-dt, dt)  # Set the x-axis limits to (-dt, dt)
-    ax.set_xlabel('Time (s) relative to t0')
+    fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
+    ax.grid(False)
+    ax.set_yscale('log')
+    ax.set_ylim(ymin=20, ymax=1024)
+    #ax.set_xlim(-dt, dt)  # Set the x-axis limits to -dt to dt
+    ax.set_xlim(x_values.min(), x_values.max())  # Set limits based on the new x values
+    ax.set_xlabel("Time from Merger (s)")  # Update the x-axis label
     
+    #Define a custom formatting function to display two decimal places
+    def custom_format(x, pos):
+        return f"{x:.2f}"
+
+    # Apply the custom formatting function to the x-axis
+    ax.xaxis.set_major_formatter(FuncFormatter(custom_format))
+ 
     #last column
     col12, col13 = st.columns(2)
     col12.subheader('Q-transform')            
