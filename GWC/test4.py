@@ -271,13 +271,13 @@ def get_selected_event_info(event_input, select_event):
                 chirp = selected_row['chirp_mass'].values[0]
             else:
                 st.write("GPS Information not available for the selected event.")
-    return event_name, gps_info, selected_row, total_mass_source
+    return event_name, gps_info, selected_row, total_mass_source, mass_1, mass_2, dist, snr, chirp
 
 
 #CHARTS WITH USER INPUT
 if select_event:    
     st.divider()
-    event_name, gps_info, selected_row, total_mass_source = get_selected_event_info(event_input, select_event)
+    event_name, gps_info, selected_row, total_mass_source, mass_1, mass_2, dist, snr, chirp = get_selected_event_info(event_input, select_event)
     st.markdown('### EVENT METRICS for the selected event: ' + event_name)
     st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
     st.write('The :red[red line |] indicates the largest value found to date for each category.')
