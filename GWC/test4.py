@@ -247,17 +247,17 @@ def get_selected_event_info(event_input, select_event):
         event_name = event_input[0]
         selected_event_row = df[df['commonName'] == event_name]
         if not selected_event_row.empty:
-            selected_x = selected_event_row['mass_1_source'].values[0]
-            selected_y = selected_event_row['mass_2_source'].values[0]
-            select_event = [{'x': selected_x, 'y': selected_y}]
+            selected_x = selected_row['mass_1_source'].values[0]
+            selected_y = selected_row['mass_2_source'].values[0]
+            event_name = [{'x': selected_x, 'y': selected_y}]
             if gps_info := event_gps(event_name):
-                mass_1 = selected_event_row['mass_1_source'].values[0]
-                mass_2 = selected_event_row['mass_2_source'].values[0]
-                dist = selected_event_row['luminosity_distance'].values[0]
-                total_mass_source = selected_event_row['total_mass_source'].values[0]
-                snr = selected_event_row['network_matched_filter_snr'].values[0]
-                chirp = selected_event_row['chirp_mass'].values[0]            
-    if not event_input:
+                mass_1 = selected_row['mass_1_source'].values[0]
+                mass_2 = selected_row['mass_2_source'].values[0]
+                dist = selected_row['luminosity_distance'].values[0]
+                total_mass_source = selected_row['total_mass_source'].values[0]
+                snr = selected_row['network_matched_filter_snr'].values[0]
+                chirp = selected_row['chirp_mass'].values[0]            
+    if select_event:
         # Retrieve clicked x and y values
         clicked_x = select_event[0]['x']
         clicked_y = select_event[0]['y']
