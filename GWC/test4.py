@@ -241,36 +241,42 @@ select_event = plotly_events(event_chart, click_event=True)
 
 st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
 
-#lets user select an event by input or click
-if event_input:
-    selected_event_name = event_input[0]
-    selected_event_row = df[df['commonName'] == selected_event_name]
-    if not selected_event_row.empty:
-        selected_x = selected_event_row['mass_1_source'].values[0]
-        selected_y = selected_event_row['mass_2_source'].values[0]
-        select_event = [{'x': selected_x, 'y': selected_y}]
-    else:
-        selected_event_name = ("Click on an Event")
-if select_event:
-    # Retrieve clicked x and y values
-    clicked_x = select_event[0]['x']
-    clicked_y = select_event[0]['y']
-
-    # Find the row in the DataFrame that matches the clicked x and y values
-    selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
-
-    if not selected_row.empty:
-        selected_common_name = selected_row["commonName"].values[0]
-        event_name = selected_common_name
-        if gps_info := event_gps(event_name):
-            mass_1 = selected_row['mass_1_source'].values[0]
-            mass_2 = selected_row['mass_2_source'].values[0]
-            dist = selected_row['luminosity_distance'].values[0]
-            total_mass_source = selected_row['total_mass_source'].values[0]
-            snr = selected_row['network_matched_filter_snr'].values[0]
-            chirp = selected_row['chirp_mass'].values[0]
+def get_selected_event_info(event_input, select_event):
+    if event_input:
+        selected_event_name = event_input[0]
+        selected_event_row = df[df['commonName'] == selected_event_name]
+        if not selected_event_row.empty:
+            selected_x = selected_event_row['mass_1_source'].values[0]
+            selected_y = selected_event_row['mass_2_source'].values[0]
+            select_event = [{'x': selected_x, 'y': selected_y}]
         else:
-            st.write("GPS Information not available for the selected event.")    
+            selected_event_name = ("Click on an Event")
+    if select_event:
+        # Retrieve clicked x and y values
+        clicked_x = select_event[0]['x']
+        clicked_y = select_event[0]['y']
+
+        # Find the row in the DataFrame that matches the clicked x and y values
+        selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
+
+        if not selected_row.empty:
+            selected_common_name = selected_row["commonName"].values[0]
+            event_name = selected_common_name
+            if gps_info := event_gps(event_name):
+                mass_1 = selected_row['mass_1_source'].values[0]
+                mass_2 = selected_row['mass_2_source'].values[0]
+                dist = selected_row['luminosity_distance'].values[0]
+                total_mass_source = selected_row['total_mass_source'].values[0]
+                snr = selected_row['network_matched_filter_snr'].values[0]
+                chirp = selected_row['chirp_mass'].values[0]
+            else:
+                st.write("GPS Information not available for the selected event.")
+    return event_name, gps_info, mass_1, mass_2, dist, total_mass_source, snr, chirp
+
+
+event_name, gps_info, mass_1, mass_2, dist, total_mass_source, snr, chirp = get_selected_event_info(event_input, select_event)
+
+selected_row = df[df['commonName'] == event_name]
 
 #CHARTS WITH USER INPUT
 if select_event:    
