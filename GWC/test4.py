@@ -651,9 +651,10 @@ if select_event:
     ax.grid(False)
     ax.set_yscale('log')
     ax.set_ylim(ymin=20, ymax=1024)
-    #ax.set_xlim(-dt, dt)  # Set the x-axis limits to -dt to dt
-    ax.set_xlim(x_values.min(), x_values.max())  # Set limits based on the new x values
+    ax.set_xlim(-dt, dt)  # Set the x-axis limits to -dt to dt
     ax.set_xlabel("Time from Merger (s)")  # Update the x-axis label
+    # Set the new x-axis limits and labels
+    #ax.set_xlim(x_values.min(), x_values.max())  # Set limits based on the new x values
     
     #Define a custom formatting function to display two decimal places
     def custom_format(x, pos):
@@ -661,7 +662,11 @@ if select_event:
 
     # Apply the custom formatting function to the x-axis
     ax.xaxis.set_major_formatter(FuncFormatter(custom_format))
- 
+    
+    # Specify the tick locator (AutoLocator)
+    #ax.xaxis.set_major_locator(AutoLocator())
+    #ax.set_xlabel("Time from Merger (s)")  # Update the x-axis label
+        
     #last column
     col12, col13 = st.columns(2)
     col12.subheader('Q-transform')            
