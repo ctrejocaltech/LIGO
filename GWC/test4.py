@@ -243,7 +243,7 @@ st.write('Compare the masses between both sources, along with the strength in Ne
 
 def get_selected_event_info(event_input, select_event):
     if event_input:
-        selected_event_name = event_input[0]
+        event_name = event_input[0]
         selected_event_row = df[df['commonName'] == selected_event_name]
         if not selected_event_row.empty:
             selected_x = selected_event_row['mass_1_source'].values[0]
@@ -280,9 +280,6 @@ def get_selected_event_info(event_input, select_event):
                 st.write("GPS Information not available for the selected event.")
     return event_name, gps_info, selected_row, total_mass_source, mass_1, mass_2, dist, snr, chirp
 
-# Update event_input to event_name if there is an event_input or a select_event
-if event_input:
-    event_name = event_input[0]
 
 #CHARTS WITH USER INPUT
 if select_event:    
