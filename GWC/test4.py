@@ -271,24 +271,21 @@ def get_selected_event_info(event_input, select_event):
                 chirp = selected_row['chirp_mass'].values[0]
             else:
                 st.write("GPS Information not available for the selected event.")
-    return event_name, gps_info, mass_1, mass_2, dist, total_mass_source, snr, chirp
+    return event_name, gps_info, selected_row, total_mass_source
 
-
-event_name, gps_info, mass_1, mass_2, dist, total_mass_source, snr, chirp = get_selected_event_info(event_input, select_event)
-
-selected_row = df[df['commonName'] == event_name]
 
 #CHARTS WITH USER INPUT
 if select_event:    
     st.divider()
+    event_name, gps_info, selected_row, total_mass_source = get_selected_event_info(event_input, select_event)
     st.markdown('### EVENT METRICS for the selected event: ' + event_name)
     st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
     st.write('The :red[red line |] indicates the largest value found to date for each category.')
     st.write('The :blue[[blue area]] indicates the margin of error for each source.')
     st.write('Note: Some events may not have error information.')
     ##Gauge Indicators
-    total_mass_lower = selected_row['total_mass_source_lower'].values[0] + selected_row['total_mass_source'].values[0] 
-    total_mass_upper = selected_row['total_mass_source_upper'].values[0] + selected_row['total_mass_source'].values[0]    
+    total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
+    total_mass_upper = selected_row['total_mass_source_upper'].values[0] + total_mass_source    
     total_mass = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = total_mass_source,
