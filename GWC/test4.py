@@ -652,7 +652,8 @@ if select_event:
     x_values = hq.times.value - t0 - dt  # Calculate the time relative to t0 and shift by dt
     fig4 = hq.plot()
     ax = fig4.gca()
-    x_values = hq.times.value - t0
+    ax.set_xlim(-dt, dt)  # Set the x-axis limits to (-dt, dt)
+    ax.set_xlabel('Time (s) relative to t0')
     
     #last column
     col12, col13 = st.columns(2)
