@@ -328,47 +328,8 @@ if select_event or selected_event or event_url or event_input:  # Modified line
                 st.write("GPS Information not available for the selected event.")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #CHARTS WITH USER INPUT
-if select_event:    
+if select_event or selected_event or event_url or event_input:   
     st.divider()
     st.markdown('### EVENT METRICS for the selected event: ' + event_name)
     st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
