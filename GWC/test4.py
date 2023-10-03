@@ -179,25 +179,15 @@ event_options = filter_event_options("")
 event_input = ""
 
 # Initialize event_input with event_url if it exists in the list of event options
-event_input = event_url if event_url in df['commonName'].values else ""
+if event_url in df['commonName'].values:
+    event_input = event_url
+else:
+    st.error("Error: event_name parameter not found in URL.")
+    event_input = ""
 
-#MAIN CHART FOR USER INPUT
-event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
-    "network_matched_filter_snr": "Network SNR",
-    "luminosity_distance": "Luminosity Distance (Mpc)",
-    "commonName": "Name",
-    "mass_1_source": "Mass 1",
-    "mass_2_source": "Mass 2", 
-}, title= "Event Catalog of source-frame component masses m<sub>(i)</sub>", color_continuous_scale = "dense", hover_data=["commonName"])
-
-# Initialize select_event as an empty list
-select_event = []
-#User Selection
-select_event = plotly_events(event_chart, click_event=True)
-
-selected_event_name = ""
-
-st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
+# Set select_event to event_input if event_url is not found in the list of event options
+if not event_input:
+    select_event = event_input
 
 # Create the selectbox with options
 selected_event = st.selectbox(
@@ -208,14 +198,63 @@ selected_event = st.selectbox(
 
 # Update event_input based on user selection
 if selected_event != event_input:
-    event_input = selected_event
+    if selected_event:
+        event_input = selected_event
+    elif select_event:
+        # Retrieve clicked x and y values
+        clicked_x = select_event[0]['x']
+        clicked_y = select_event[0]['y']
 
+        # Find the row in the DataFrame that matches the clicked x and y values
+        selected_event_name = df[(df['mass_1_source'] == clicked_x) & (df['mass_2_source'] == clicked_y)]['commonName'].values[0]
+        event_input = selected_event_name
 
-# If an event_input is selected or an event_url exists, update selected_event_name
-if event_input:  # Check if event_input is not empty
-    selected_event_name = event_input
-elif event_url:  # Check if event_url exists
-    selected_event_name = event_url
+#MAIN CHART FOR USER INPUT
+event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
+    "network_matched_filter_snr": "Network SNR",
+    "luminosity_distance": "Luminosity Distance (Mpc)",
+    "commonName": "Name",
+    "mass_1_source": "Mass 1",
+    "mass_2_source": "Mass 2", 
+}, title= "Event Catalog of source-frame component masses m<sub>(i)</sub>", color_continuous_scale = "dense", hover_data=["commonName"])
+
+event_chart.update_traces(
+    marker=dict(size=10,
+    symbol="circle",
+    )
+)
+event_chart.update_layout(
+    hovermode='x unified',
+    width=900,
+    height=450,
+    xaxis_title="Mass 1 (M<sub>☉</sub>)",  # Add the smaller Solar Mass symbol using <sub> tag
+    yaxis_title="Mass 2 (M<sub>☉</sub>)", 
+    hoverdistance=-1,
+)
+event_chart.update_xaxes(
+    title_standoff=10,
+    title_font = {"size": 15},
+)
+event_chart.update_yaxes(
+    title_standoff=10,
+    title_font = {"size": 15},
+)
+st.write(
+"""
+The chart allows the following interactivity:
+- Pan and Zoom
+- Box Selection
+- Download chart as a PNG
+"""
+)
+# Initialize select_event as an empty list
+select_event = []
+#User Selection
+select_event = plotly_events(event_chart, click_event=True)
+
+selected_event_name = ""
+
+st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
 
 # Define a function to handle the selection logic
 def handle_event_selection():
@@ -251,104 +290,79 @@ def handle_event_selection():
         selected_event_name = "Click on an Event"
 
 # Call the function to handle event selection
-if event_input or event_url or select_event:
-    handle_event_selection()
+if event_input or event_url or select_event or selected_event:  # Modified line
+    handle_event_selection()  # Modified line
 
-if select_event or event_input or event_url:
-    if select_event:
+if select_event or selected_event:  # Modified line
+    if selected_event:  # Modified line
+        event_name = selected_event  # Modified line
+    else:
         # Retrieve clicked x and y values
         clicked_x = select_event[0]['x']
         clicked_y = select_event[0]['y']
-    elif event_input or event_url:
-        selected_row = df[df["commonName"] == event_input or df["commonName"] == event_url]
-        clicked_x = selected_row["mass_1_source"].values[0]
-        clicked_y = selected_row["mass_2_source"].values[0]
 
-    # Find the row in the DataFrame that matches the clicked x and y values
-    selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
+        # Find the row in the DataFrame that matches the clicked x and y values
+        selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
 
-    if not selected_row.empty:
-        selected_common_name = selected_row["commonName"].values[0]
-        event_name = selected_common_name
-        if gps_info := event_gps(event_name):
-            mass_1 = selected_row['mass_1_source'].values[0]
-            mass_2 = selected_row['mass_2_source'].values[0]
-            dist = selected_row['luminosity_distance'].values[0]
-            total_mass_source = selected_row['total_mass_source'].values[0]
-            snr = selected_row['network_matched_filter_snr'].values[0]
-            chirp = selected_row['chirp_mass'].values[0]
-            # Continue with the code that uses gps_info here
-            st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
-        else:
-            st.write("GPS Information not available for the selected event.")
-
-#CHARTS WITH USER INPUT
-if select_event or event_input or event_url:    
-    st.divider()
-    st.markdown('### EVENT METRICS for the selected event: ' + event_name)
-    st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
-    st.write('The :red[red line |] indicates the largest value found to date for each category.')
-    st.write('The :blue[[blue area]] indicates the margin of error for each source.')
-    st.write('Note: Some events may not have error information.')
-    ##Gauge Indicators
-
-# Get the current page URL
-url = st.experimental_get_query_params()
-# Get specific parameter values, e.g., event_name
-event_url = url.get("event_name", [""])[0]
-
-# Get the list of event options
-event_options = filter_event_options("")
-event_input = ""
-
-# Initialize event_input with event_url if it exists in the list of event options
-event_input = event_url if event_url in df['commonName'].values else ""
-
-#MAIN CHART FOR USER INPUT
-event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
-    "network_matched_filter_snr": "Network SNR",
-    "luminosity_distance": "Luminosity Distance (Mpc)",
-    "commonName": "Name",
-    "mass_1_source": "Mass 1",
-    "mass_2_source": "Mass 2", 
-}, title= "Event Catalog of source-frame component masses m<sub>(i)</sub>", color_continuous_scale = "dense", hover_data=["commonName"])
-
-# Initialize select_event as an empty list
-select_event = []
-#User Selection
-select_event = plotly_events(event_chart, click_event=True)
-
-selected_event_name = ""
-
-st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
-
-# Create the selectbox with options
-selected_event = st.selectbox(
-    "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
-    [event_input] + [""] + event_options,
-    key="event_input",
-)
-
-# Update event_input based on user selection
-if selected_event != event_input:
-    event_input = selected_event
+        if not selected_row.empty:
+            selected_common_name = selected_row["commonName"].values[0]
+            event_name = selected_common_name
+            if gps_info := event_gps(event_name):
+                mass_1 = selected_row['mass_1_source'].values[0]
+                mass_2 = selected_row['mass_2_source'].values[0]
+                dist = selected_row['luminosity_distance'].values[0]
+                total_mass_source = selected_row['total_mass_source'].values[0]
+                snr = selected_row['network_matched_filter_snr'].values[0]
+                chirp = selected_row['chirp_mass'].values[0]
+                # Continue with the code that uses gps_info here
+                st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
+            else:
+                st.write("GPS Information not available for the selected event.")
 
 
-# If an event_input is selected or an event_url exists, update selected_event_name
-if event_input:  # Check if event_input is not empty
-    selected_event_name = event_input
-elif event_url:  # Check if event_url exists
-    selected_event_name = event_url
 
- # Call the function to handle event selection
-if event_input or event_url or select_event:
-    handle_event_selection()
-           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #CHARTS WITH USER INPUT
-if select_event or event_input or event_url:    
+if select_event:    
     st.divider()
-    st.markdown('### EVENT METRICS for the selected event: ' + event_name)
+    st.markdown('### EVENT METRICS for the selected event: ' + event_input)
     st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
     st.write('The :red[red line |] indicates the largest value found to date for each category.')
     st.write('The :blue[[blue area]] indicates the margin of error for each source.')
@@ -706,24 +720,22 @@ if select_event or event_input or event_url:
     
     outseg = (t0-dt, t0+dt)
     hq = ldata.q_transform(outseg=outseg, qrange=qrange)
-    x_values = hq.times.value - t0 - dt  # Calculate the time relative to t0 and shift by dt
+    x_values = hq.times.value - t0  # Calculate the time relative to t0
     fig4 = hq.plot()
     ax = fig4.gca()
     fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
     ax.grid(False)
     ax.set_yscale('log')
     ax.set_ylim(ymin=20, ymax=1024)
-    ax.set_xlim(-dt, dt)  # Set the x-axis limits to -dt to dt
-    ax.set_xlabel("Time from Merger (s)")  # Update the x-axis label
     # Set the new x-axis limits and labels
     #ax.set_xlim(x_values.min(), x_values.max())  # Set limits based on the new x values
     
-    #Define a custom formatting function to display two decimal places
-    def custom_format(x, pos):
-        return f"{x:.2f}"
+    # Define a custom formatting function to display two decimal places
+    #def custom_format(x, pos):
+    #    return f"{x:.2f}"
 
     # Apply the custom formatting function to the x-axis
-    ax.xaxis.set_major_formatter(FuncFormatter(custom_format))
+    #ax.xaxis.set_major_formatter(FuncFormatter(custom_format))
     
     # Specify the tick locator (AutoLocator)
     #ax.xaxis.set_major_locator(AutoLocator())
