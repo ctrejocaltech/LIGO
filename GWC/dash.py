@@ -58,13 +58,6 @@ st.set_page_config(page_title=apptitle, layout="wide")
 st.title('Gravitational-wave Transient Catalog Dashboard')
 st.write('The Gravitational-wave Transient Catalog (GWTC) is a cumulative set of gravitational wave transients maintained by the LIGO/Virgo/KAGRA collaboration. The online GWTC contains confidently-detected events from multiple data releases. For further information, please visit https://gwosc.org')
 
-# Get the current page URL
-url = st.experimental_get_query_params()
-
-# Get specific parameter values, e.g., event_name
-event_url = url.get("event_name", ["default_event"])[0]
-
-
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
 def load_and_group_data():
@@ -202,41 +195,55 @@ event_chart.update_yaxes(
     title_standoff=10,
     title_font = {"size": 15},
 )
-# Define the existing filtering function to filter based on prefix and event_name
-def filter_event_options(prefix, event_name):
-    # Use both prefix and event_name to filter event options
-    event_options = df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
-    
-    # If there's a specific event_name, filter further based on it
-    if event_url != "default_event":
-        event_options = [event for event in event_options if event_name in event]
 
-    return event_options
+def filter_event_options(prefix):
+    return df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
+event_options = filter_event_options("")
 
-event_input = st.multiselect(
-    "If you want to look up a specific Event, type the name below or click on an event in the chart below to populate more information.",
-    filter_event_options("", event_url),
-    default=[],
+# Get the current page URL and query parameter
+url = st.experimental_get_query_params()
+event_url = url.get("event_name", [""])[0]
+
+# Create the selectbox with options
+event_input = st.selectbox(
+    "Select an event from the drop-down list:",
+    [""] + event_options,
     key="event_input",
 )
-st.write(
-"""
-The chart allows the following interactivity:
-- Pan and Zoom
-- Box Selection
-- Download chart as a PNG
-"""
-)
-# Initialize select_event as an empty list
-select_event = []
-#User Selection
+# BEGIN: 1a2b3c4d5e6f
+#reset_button = st.button("Reset Selection")
+#if reset_button:
+#    event_input = [""]
+# END: 1a2b3c4d5e6f
+
+
+st.write("OR click on an event in the chart.")
 select_event = plotly_events(event_chart, click_event=True)
 
-st.write('Compare the masses between both sources, along with the strength in Network SNR. A mass above 3 solar masses is considered a black hole, a mass with less than 3 solar masses is a neutron star. ')
+if event_url and not event_input: 
+    event_input = event_url
+
+if event_input:
+    selected_event_row = df[df['commonName'] == event_input]
+    if not selected_event_row.empty:
+        selected_x = selected_event_row['mass_1_source'].values[0]
+        selected_y = selected_event_row['mass_2_source'].values[0]
+        select_event = [{'x': selected_x, 'y': selected_y}]
+    if select_event:
+        st.experimental_set_query_params(event_name=select_event)
+
+with st.expander(label="The chart allows the following interactivity: ", expanded=True):
+    st.write(
+    """
+    - Pan and Zoom
+    - Box Selection
+    - Download chart as a PNG
+    """
+    )
 
 #lets user select an event by input or click
 if event_input:
-    selected_event_name = event_input[0]
+    selected_event_name = event_input
     selected_event_row = df[df['commonName'] == selected_event_name]
     if not selected_event_row.empty:
         selected_x = selected_event_row['mass_1_source'].values[0]
@@ -244,38 +251,39 @@ if event_input:
         select_event = [{'x': selected_x, 'y': selected_y}]
     else:
         selected_event_name = ("Click on an Event")
-if select_event:
-    # Retrieve clicked x and y values
-    clicked_x = select_event[0]['x']
-    clicked_y = select_event[0]['y']
+    if select_event:
+        # Retrieve clicked x and y values
+        clicked_x = select_event[0]['x']
+        clicked_y = select_event[0]['y']
 
-    # Find the row in the DataFrame that matches the clicked x and y values
-    selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
+        # Find the row in the DataFrame that matches the clicked x and y values
+        selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
 
-    if not selected_row.empty:
-        selected_common_name = selected_row["commonName"].values[0]
-        event_name = selected_common_name
-        if gps_info := event_gps(event_name):
-            mass_1 = selected_row['mass_1_source'].values[0]
-            mass_2 = selected_row['mass_2_source'].values[0]
-            dist = selected_row['luminosity_distance'].values[0]
-            total_mass_source = selected_row['total_mass_source'].values[0]
-            snr = selected_row['network_matched_filter_snr'].values[0]
-            chirp = selected_row['chirp_mass'].values[0]
-        else:
-            st.write("GPS Information not available for the selected event.")    
-
+        if not selected_row.empty:
+            selected_common_name = selected_row["commonName"].values[0]
+            event_name = selected_common_name
+            if gps_info := event_gps(event_name):
+                mass_1 = selected_row['mass_1_source'].values[0]
+                mass_2 = selected_row['mass_2_source'].values[0]
+                dist = selected_row['luminosity_distance'].values[0]
+                total_mass_source = selected_row['total_mass_source'].values[0]
+                snr = selected_row['network_matched_filter_snr'].values[0]
+                chirp = selected_row['chirp_mass'].values[0]
+            else:
+                st.write("GPS Information not available for the selected event.") 
+st.divider()
 #CHARTS WITH USER INPUT
-if select_event:    
-    st.divider()
-    st.markdown('### EVENT METRICS for the selected event: ' + event_name)
-    st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
-    st.write('The :red[red line |] indicates the largest value found to date for each category.')
-    st.write('The :blue[[blue area]] indicates the margin of error for each source.')
-    st.write('Note: Some events may not have error information.')
+if select_event or event_input:    
+    st.markdown('### Selected Event: ' + event_name)
+    with st.expander(label="Breakdown: ", expanded=True):
+        st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
+        st.write('The :blue[[blue area]] indicates the margin of error for each source.')
+        st.write('The :red[red line |] indicates the largest value in the catalog.')
+        st.write('The largest total mass to date for this catalog is Event GW190426_190642 at  :red[181.5 solar masses], with object 1 at :red[105.5 solar masses], and object 2 at :red[76.5 solar masses].')
+        st.write('*Note: Some events may not have error information.')
     ##Gauge Indicators
-    total_mass_lower = selected_row['total_mass_source_lower'].values[0] + selected_row['total_mass_source'].values[0] 
-    total_mass_upper = selected_row['total_mass_source_upper'].values[0] + selected_row['total_mass_source'].values[0]    
+    total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
+    total_mass_upper = selected_row['total_mass_source_upper'].values[0] + total_mass_source    
     total_mass = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = total_mass_source,
@@ -412,7 +420,7 @@ if select_event:
                 x=0.5,  # Adjust the x position for centering
                 y=-0.5,  # Adjust the y position for distance from the chart
                 showarrow=False,
-                font=dict(size=10),
+                font=dict(size=11),  # Increase the font size to 12 points
             )
         ]
     )
@@ -437,13 +445,13 @@ if select_event:
         height=300,
         annotations=[
             dict(
-                text= "The mass of source 1 in relation to the catalogs mass 1 distribution in solar mass.",
+                text= "The mass of source 1 in relation to the catalogs distribution in solar mass.",
                 xref="paper",
                 yref="paper",
                 x=0.5,  # Adjust the x position for centering
                 y=-0.5,  # Adjust the y position for distance from the chart
                 showarrow=False,
-                font=dict(size=10),
+                font=dict(size=11),
             )
         ]
     )
@@ -474,7 +482,7 @@ if select_event:
                 x=0.5,  # Adjust the x position for centering
                 y=-0.5,  # Adjust the y position for distance from the chart
                 showarrow=False,
-                font=dict(size=10),
+                font=dict(size=11),
             )
         ]
     )
@@ -506,7 +514,7 @@ if select_event:
                 x=0.5,  # Adjust the x position for centering
                 y=-0.5,  # Adjust the y position for distance from the chart
                 showarrow=False,
-                font=dict(size=10),
+                font=dict(size=14),
             )
         ]
     )
@@ -538,12 +546,11 @@ if select_event:
                 x=0.5,  # Adjust the x position for centering
                 y=-0.5,  # Adjust the y position for distance from the chart
                 showarrow=False,
-                font=dict(size=10),
+                font=dict(size=14),
             )
         ]
     )
     #Columns for Gauges
-    st.write('Largest Total Mass found to date is for Event GW190426_190642 at :red[181.5 solar masses], with the largest mass of object 1 at :red[105.5 solar masses], and the largest mass of object 2 at :red[76.5 solar masses].')
     col7, col8, col9 = st.columns(3)
     col7.write(total_mass)
     col7.write(ridge_mass)
@@ -662,8 +669,12 @@ if select_event:
     col13.write(wave)
     col13.write('Listen to what the waveform sounds like')
     col13.audio("waveform.wav")
-    col13.write('The waveform is a simplified example of the gravitational waveform radiated during a compact binary coalescence using basic parameters. ')
+    col13.write('The waveform is a simplified example of the gravitational waveform radiated during a compact binary coalescence with the mass values of this source. ')
 else:
     st.write("Click on a event to view more details")
 
 st.write('To learn more about Gravitational waves please visit the [Gravitational Wave Open Science Center Learning Path](https://gwosc.org/path/)')
+st.write('GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run')
+st.write(' https://arxiv.org/abs/2111.03606')
+st.write('GWOSC gwosc.org')
+st.write('This app has made use of data or software obtained from the Gravitational Wave Open Science Center (gwosc.org), a service of the LIGO Scientific Collaboration, the Virgo Collaboration, and KAGRA.')
