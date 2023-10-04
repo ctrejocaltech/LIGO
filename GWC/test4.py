@@ -86,7 +86,7 @@ with col1:
     if selected_cat in grouped_data:
         event_df = grouped_data[selected_cat]
 
-col1.write('Each Catalog contains a collection of events observed during each LIGO run.')
+col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run.')
 
 # Eliminate rows with missing mass_1_source or mass_2_source
 event_df = event_df.dropna(subset=['mass_1_source', 'mass_2_source'])
@@ -102,7 +102,7 @@ count = event_df.commonName.unique().size
 col2.metric(label="Total Observations in the Catalog",
     value=(count),    
 )
-col2.write('This is the number of confident observations for the catalog selected, for a complete list of all events please visit: https://gwosc.org/eventapi/html/allevents/' )
+col2.write('This is the number of confident observations for the catalog selected, for a complete list of all events please visit: https://gwosc.org/eventapi/' )
 
 # Sort mass for event type distribution
 def categorize_event(row):
@@ -120,7 +120,7 @@ grouped_df = df.groupby('Event').size().reset_index(name='Count')
 # Custom color scale for events
 event_colors = alt.Scale(
     domain=['Binary Black Hole', 'Neutron Star - Black Hole', 'Binary Neutron Star'],  # Replace with event names
-    range=['#2d2b91', '#4c4ac9', '#6f6ed4']  # Replace with desired colors
+    range=['#201e66', '#504eca', '#bdbceb']  # Replace with desired colors
 )
 # Create the pie chart
 pie_chart = alt.Chart(grouped_df).mark_arc().encode(
@@ -136,8 +136,8 @@ col3.altair_chart(pie_chart, use_container_width=True)
 col3.write('The observed events are mergers of neutron stars and/or black holes.')
 st.divider()    
 #mass chart for Dashboard
-mass_chart = alt.Chart(df, title="Total Mass Histogram").mark_bar().encode(
-    x=alt.X('total_mass_source:N', title='Total Mass', bin=True),
+mass_chart = alt.Chart(df, title="Total Mass Histogram in Solar Masses").mark_bar().encode(
+    x=alt.X('total_mass_source:N', title='Total Source Frame Mass', bin=True),
     y=alt.Y('count()', title='Count'),
     #tooltip=['commonName', 'GPS']
 )
@@ -161,7 +161,7 @@ col4.write('Shows the distribution of mass for objects contained in the Catalog 
 col5.altair_chart(dist, use_container_width=True)
 col5.write('Shows the distribution of luminosity distance in megaparsec (3.26 million lightyears) for objects contained in the Catalog selected.')
 col6.altair_chart(snr, use_container_width=True)
-col6.write('This network SNR is the quadrature sum of the individual detector SNRs for all detectors involved in the reported trigger. ')
+col6.write('This network signal to noise ratio (SNR) is the quadrature sum of the individual detector SNRs for all detectors involved in the reported trigger. ')
 #cite from https://journals.aps.org/prx/pdf/10.1103/PhysRevX.9.031040
 st.divider()
 st.markdown('### Select an event from the catalog to learn more')
@@ -183,8 +183,8 @@ event_chart.update_layout(
     hovermode='x unified',
     width=900,
     height=450,
-    xaxis_title="Mass 1 (M<sub>☉</sub>)",  # Add the smaller Solar Mass symbol using <sub> tag
-    yaxis_title="Mass 2 (M<sub>☉</sub>)", 
+    xaxis_title="Source Frame Mass 1 (M<sub>☉</sub>)",  # Add the smaller Solar Mass symbol using <sub> tag
+    yaxis_title="Source Frame Mass 2 (M<sub>☉</sub>)", 
     hoverdistance=-1,
 )
 event_chart.update_xaxes(
