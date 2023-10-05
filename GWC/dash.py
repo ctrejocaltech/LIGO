@@ -673,8 +673,10 @@ if select_event or event_input:
 else:
     st.write("Click on a event to view more details")
 
+st.divider()
+st.header('About this app')
 st.write('To learn more about Gravitational waves please visit the [Gravitational Wave Open Science Center Learning Path](https://gwosc.org/path/)')
-st.write('GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run')
+st.subheader('GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run')
 st.write(' https://arxiv.org/abs/2111.03606')
 st.write('GWOSC gwosc.org')
 st.write('This app has made use of data or software obtained from the Gravitational Wave Open Science Center (gwosc.org), a service of the LIGO Scientific Collaboration, the Virgo Collaboration, and KAGRA.')
