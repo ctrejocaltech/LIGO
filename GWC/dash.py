@@ -7,7 +7,7 @@ from streamlit_plotly_events import plotly_events
 import plotly.graph_objects as go
 import altair as alt
 import pycbc
-from pycbc.waveform import get_td_waveform, fd_approximants
+from pycbc.waveform import get_td_waveform
 import pylab
 import openpyxl
 import requests
@@ -210,18 +210,12 @@ event_input = st.selectbox(
     [""] + event_options,
     key="event_input",
 )
-# BEGIN: 1a2b3c4d5e6f
-#reset_button = st.button("Reset Selection")
-#if reset_button:
-#    event_input = [""]
-# END: 1a2b3c4d5e6f
 
+if event_url and not event_input:
+    event_input = event_url
 
 st.write("OR click on an event in the chart.")
 select_event = plotly_events(event_chart, click_event=True)
-
-if event_url and not event_input: 
-    event_input = event_url
 
 if event_input:
     selected_event_row = df[df['commonName'] == event_input]
@@ -231,6 +225,8 @@ if event_input:
         select_event = [{'x': selected_x, 'y': selected_y}]
     if select_event:
         st.experimental_set_query_params(event_name=select_event)
+else:
+    st.experimental_set_query_params(event_name=select_event)
 
 with st.expander(label="The chart allows the following interactivity: ", expanded=True):
     st.write(
@@ -255,10 +251,8 @@ if event_input:
         # Retrieve clicked x and y values
         clicked_x = select_event[0]['x']
         clicked_y = select_event[0]['y']
-
         # Find the row in the DataFrame that matches the clicked x and y values
         selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
-
         if not selected_row.empty:
             selected_common_name = selected_row["commonName"].values[0]
             event_name = selected_common_name
@@ -269,8 +263,14 @@ if event_input:
                 total_mass_source = selected_row['total_mass_source'].values[0]
                 snr = selected_row['network_matched_filter_snr'].values[0]
                 chirp = selected_row['chirp_mass'].values[0]
-            else:
-                st.write("GPS Information not available for the selected event.") 
+else:
+    st.experimental_set_query_params(event_name=select_event)
+    
+# Ensure event_name is listed as its commonName format
+if event_name:
+    selected_event_row = df[df['commonName'] == event_name]
+    if not selected_event_row.empty:
+        event_name = selected_event_row["commonName"].values[0]
 st.divider()
 #CHARTS WITH USER INPUT
 if select_event or event_input:    
@@ -617,8 +617,6 @@ if select_event or event_input:
         chirp_mass = selected_row['chirp_mass_source'].values[0]   
         if chirp_mass < 5:
             bns = True
-        else:
-            print('failed to find chirp mass')
 
     if bns:
         dt = 2
