@@ -211,22 +211,23 @@ event_input = st.selectbox(
     key="event_input",
 )
 
-if event_url and not event_input:
-    event_input = event_url
-
 st.write("OR click on an event in the chart.")
 select_event = plotly_events(event_chart, click_event=True)
 
+if not event_input and select_event:
+    selected_event_row = df[(df['mass_1_source'] == select_event[0]['x']) & (df['mass_2_source'] == select_event[0]['y'])]
+    if not selected_event_row.empty:
+        event_input = selected_event_row['commonName'].values[0]
+        event_url = select_event
+elif event_url and not event_input:
+    event_input = event_url
+    
 if event_input:
     selected_event_row = df[df['commonName'] == event_input]
     if not selected_event_row.empty:
         selected_x = selected_event_row['mass_1_source'].values[0]
         selected_y = selected_event_row['mass_2_source'].values[0]
         select_event = [{'x': selected_x, 'y': selected_y}]
-    if select_event:
-        st.experimental_set_query_params(event_name=select_event)
-else:
-    st.experimental_set_query_params(event_name=select_event)
 
 with st.expander(label="The chart allows the following interactivity: ", expanded=True):
     st.write(
@@ -266,11 +267,7 @@ if event_input:
 else:
     st.experimental_set_query_params(event_name=select_event)
     
-# Ensure event_name is listed as its commonName format
-if event_name:
-    selected_event_row = df[df['commonName'] == event_name]
-    if not selected_event_row.empty:
-        event_name = selected_event_row["commonName"].values[0]
+
 st.divider()
 #CHARTS WITH USER INPUT
 if select_event or event_input:    
