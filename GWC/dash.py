@@ -276,7 +276,7 @@ if select_event or event_input:
         st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
         st.write('The :blue[[blue area]] indicates the margin of error for each source.')
         st.write('The :red[red line |] indicates the largest value in the catalog.')
-        st.write('The largest total mass to date for this catalog is Event GW190426_190642 at  :red[181.5 solar masses], with object 1 at :red[105.5 solar masses], and object 2 at :red[76.5 solar masses].')
+        st.write('The largest total mass to date for this catalog is Event[:red[GW190426_190642]](https://gwtc-dash.streamlit.app/?event_name=GW190426_190642) at  :red[181.5 solar masses], with object 1 at :red[105.5 solar masses], and object 2 at :red[76.5 solar masses].')
         st.write('*Note: Some events may not have error information.')
     ##Gauge Indicators
     total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
@@ -390,7 +390,7 @@ if select_event or event_input:
     width=400,
     height=400,
     )
-    #Ridgeline plots
+    ## RIDGE LINE PLOTS
     ridge_mass = go.Figure()
     ridge_mass.add_trace(go.Violin(x=df['total_mass_source'], line_color='#808080', name = ''))
     ridge_mass.add_shape(
@@ -406,18 +406,19 @@ if select_event or event_input:
     ridge_mass.update_traces(orientation='h', side='positive', width=4, points=False)
     ridge_mass.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_mass.update_layout(
+        title = {'text': "Total Mass (M<sub>☉</sub>) for " + event_name},
         autosize=False,
         width=400,
         height=300,
         annotations=[
             dict(
-                text= "Total mass of " + event_name + " in relation to the catalogs mass distribution in solar mass.",
+                text= "In relation to the catalogs mass distribution in solar mass.",
                 xref="paper",
                 yref="paper",
                 x=0.5,  # Adjust the x position for centering
                 y=-0.5,  # Adjust the y position for distance from the chart
                 showarrow=False,
-                font=dict(size=11),  # Increase the font size to 12 points
+                font=dict(size=15),
             )
         ]
     )
@@ -438,6 +439,7 @@ if select_event or event_input:
     ridge_mass1.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_mass1.update_layout(
         autosize=False,
+        title = {'text': "Mass of source 1 (M<sub>☉</sub>)"},
         width=400,
         height=300,
         annotations=[
@@ -468,6 +470,7 @@ if select_event or event_input:
     ridge_mass2.update_traces(orientation='h', side='positive', width=4, points=False)
     ridge_mass2.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_mass2.update_layout(
+        title = {'text': "Mass of source 2 (M<sub>☉</sub>)"},
         autosize=False,
         width=400,
         height=300,
@@ -500,6 +503,7 @@ if select_event or event_input:
     ridge_dist.update_traces(orientation='h', side='positive', width=4, points=False)
     ridge_dist.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_dist.update_layout(
+        title = {'text': "Luminosity Distance (Gpc)"},
         autosize=False,
         width=400,
         height=300,
@@ -532,6 +536,7 @@ if select_event or event_input:
     ridge_snr.update_traces(orientation='h', side='positive', width=4, points=False)
     ridge_snr.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_snr.update_layout(
+        title = {'text': "Network Matched Filter SNR"},
         autosize=False,
         width=400,
         height=300,
@@ -559,10 +564,10 @@ if select_event or event_input:
     #second column
     col10, col11, = st.columns(2)
     col10.write(lum_dist)
-    col10.write('The furthest merger observed to date is for Event GW190403_051519 at :red[8.28 Gpc].')
+    col10.write('The furthest merger in this catalog is for Event GW190403_051519 at :red[8.28 Gpc].')
     col10.write(ridge_dist)
     col11.write(snr_chart)
-    col11.write('The highest SNR observed to date is for Event: GW170817 at :red[33].')
+    col11.write('The highest SNR in this catalog is for Event: GW170817 at :red[33].')
     col11.write(ridge_snr)
     st.divider()
     #have users select a detector
@@ -594,7 +599,7 @@ if select_event or event_input:
     plt.legend()
     plt.grid()
     
-    #Fetch Time Series Data
+    # Fetch Time Series Data
     def fetch_time_series(detector, segment):
         try:
             return TimeSeries.fetch_open_data(detector, *segment, verbose=True, cache=True)
@@ -603,6 +608,7 @@ if select_event or event_input:
             return None
 
     bns = False  # Initialize bns to a default value
+    ldata = None  # Initialize ldata to None
 
     if gps_info:
         # Define the segment based on GPS info
@@ -611,67 +617,60 @@ if select_event or event_input:
         # Fetch time series data for the selected detector
         ldata = fetch_time_series(detector, segment)
 
-        chirp_mass = selected_row['chirp_mass_source'].values[0]   
+    if ldata is not None:  # Check if ldata is not None
+        chirp_mass = selected_row['chirp_mass_source'].values[0]
         if chirp_mass < 5:
             bns = True
 
-    if bns:
-        dt = 2
-    else:
-        dt = 0.3
+        if bns:
+            dt = 2
+        else:
+            dt = 0.3
 
-    t0 = datasets.event_gps(event_name)
-    q_center = 100*(1/chirp_mass)
-    if q_center < 5:
-        q_center = 5
-    qrange = (int(q_center*0.8), int(q_center*1.2))  
-    outseg = (t0-dt, t0+dt)
-    hq = ldata.q_transform(outseg=outseg, qrange=qrange)
-    x_values = hq.times.value - t0  # Calculate the time relative to t0
-    fig4 = hq.plot()
-    ax = fig4.gca()
-    fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
-    ax.grid(False)
-    ax.set_yscale('log')
-    ax.set_ylim(ymin=20, ymax=1024)
-    # Set the new x-axis limits and labels
-    #ax.set_xlim(x_values.min(), x_values.max())  # Set limits based on the new x values
-    
-    # Define a custom formatting function to display two decimal places
-    #def custom_format(x, pos):
-    #    return f"{x:.2f}"
+        t0 = datasets.event_gps(event_name)
+        q_center = 100 * (1 / chirp_mass)
+        if q_center < 5:
+            q_center = 5
+        qrange = (int(q_center * 0.8), int(q_center * 1.2))
+        outseg = (t0 - dt, t0 + dt)
 
-    # Apply the custom formatting function to the x-axis
-    #ax.xaxis.set_major_formatter(FuncFormatter(custom_format))
-    
-    # Specify the tick locator (AutoLocator)
-    #ax.xaxis.set_major_locator(AutoLocator())
-    #ax.set_xlabel("Time from Merger (s)")  # Update the x-axis label
+        if ldata is not None:  # Check if ldata is not None again before using it
+            hq = ldata.q_transform(outseg=outseg, qrange=qrange)
+            x_values = hq.times.value - t0  # Calculate the time relative to t0
+            fig4 = hq.plot()
+            ax = fig4.gca()
+            fig4.colorbar(label="Normalised energy", vmax=25, vmin=0)
+            ax.grid(False)
+            ax.set_yscale('log')
+            ax.set_ylim(ymin=20, ymax=1024)
+
+
+        #last column
+        col12, col13 = st.columns(2)
+        col12.subheader('Q-transform')            
+        col12.pyplot(fig4, clear_figure=True)
+        col12.write("""
+        A Q-transform plot shows how a signal’s frequency changes with time.
+        * The x-axis shows time
+        * The y-axis shows frequency
+
+        The color scale shows the amount of “energy” or “signal power” in each time-frequency pixel.
         
-    #last column
-    col12, col13 = st.columns(2)
-    col12.subheader('Q-transform')            
-    col12.pyplot(fig4, clear_figure=True)
-    col12.write("""
-    A Q-transform plot shows how a signal’s frequency changes with time.
-    * The x-axis shows time
-    * The y-axis shows frequency
-
-    The color scale shows the amount of “energy” or “signal power” in each time-frequency pixel.
-    
-    """)
-    col13.subheader('Waveform')
-    col13.write(wave)
-    col13.write('Listen to what the waveform sounds like')
-    col13.audio("waveform.wav")
-    col13.write('The waveform is a simplified example of the gravitational waveform radiated during a compact binary coalescence with the mass values of this source. ')
-else:
-    st.write("Click on a event to view more details")
+        """)
+        col13.subheader('Waveform')
+        col13.write(wave)
+        col13.write('Listen to what the waveform sounds like')
+        col13.audio("waveform.wav")
+        col13.write('The waveform is a simplified example of the gravitational waveform radiated during a compact binary coalescence with the mass values of this source. ')
+    else:
+        st.write("Click on a event to view more details")
 
 st.divider()
-st.header('About this app')
 st.subheader('GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run')
 st.write(' https://arxiv.org/abs/2111.03606')
+st.divider()
+st.header('About this app')
 st.write('This app was made use of data or software obtained from the Gravitational Wave Open Science Center (gwosc.org), a service of the LIGO Scientific Collaboration, the Virgo Collaboration, and KAGRA.')
 st.write('To learn more about Gravitational waves please visit the [Gravitational Wave Open Science Center Learning Path](https://gwosc.org/path/)')
-st.write('GWOSC - gwosc.org')
+st.write('GWOSC - https://gwosc.org')
+st.divider()
