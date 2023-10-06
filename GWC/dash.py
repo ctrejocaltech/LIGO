@@ -439,7 +439,7 @@ if select_event or event_input:
     ridge_mass1.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_mass1.update_layout(
         autosize=False,
-        title = {'text': "Mass of source 1 (M<sub>☉</sub>)"},
+        title = {'text': "Mass of source 1 (M<sub>☉</sub>) for" + event_name},
         width=400,
         height=300,
         annotations=[
@@ -470,19 +470,19 @@ if select_event or event_input:
     ridge_mass2.update_traces(orientation='h', side='positive', width=4, points=False)
     ridge_mass2.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_mass2.update_layout(
-        title = {'text': "Mass of source 2 (M<sub>☉</sub>)"},
+        title = {'text': "Mass of source 2 (M<sub>☉</sub>) for " + event_name},
         autosize=False,
         width=400,
         height=300,
         annotations=[
             dict(
-                text= "The mass of source 2 in relation to the catalogs mass 2 distribution in solar mass.",
+                text= "In relation to the catalogs mass 2 distribution in solar mass.",
                 xref="paper",
                 yref="paper",
                 x=0.5,  # Adjust the x position for centering
                 y=-0.5,  # Adjust the y position for distance from the chart
                 showarrow=False,
-                font=dict(size=11),
+                font=dict(size=14),
             )
         ]
     )
@@ -503,7 +503,7 @@ if select_event or event_input:
     ridge_dist.update_traces(orientation='h', side='positive', width=4, points=False)
     ridge_dist.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_dist.update_layout(
-        title = {'text': "Luminosity Distance (Gpc)"},
+        title = {'text': "Luminosity Distance (Gpc) for " + event_name},
         autosize=False,
         width=400,
         height=300,
@@ -536,7 +536,7 @@ if select_event or event_input:
     ridge_snr.update_traces(orientation='h', side='positive', width=4, points=False)
     ridge_snr.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_snr.update_layout(
-        title = {'text': "Network Matched Filter SNR"},
+        title = {'text': "Network Matched Filter SNR for " + event_name},
         autosize=False,
         width=400,
         height=300,
