@@ -444,13 +444,13 @@ if select_event or event_input:
         height=300,
         annotations=[
             dict(
-                text= "The mass of source 1 in relation to the catalogs distribution in solar mass.",
+                text= "In relation to the catalogs distribution in solar mass.",
                 xref="paper",
                 yref="paper",
                 x=0.5,  # Adjust the x position for centering
                 y=-0.5,  # Adjust the y position for distance from the chart
                 showarrow=False,
-                font=dict(size=11),
+                font=dict(size=14),
             )
         ]
     )
@@ -533,7 +533,7 @@ if select_event or event_input:
             line=dict(color="#4751a5", width=3),
         )
     )
-    ridge_snr.update_traces(orientation='h', side='positive', width=4, points=False)
+    ridge_snr.update_traces(orientation='h', side='positive', width=4, points=False) # set points to False
     ridge_snr.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_snr.update_layout(
         title = {'text': "Network Matched Filter SNR for " + event_name},
