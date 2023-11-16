@@ -34,22 +34,6 @@ import base64
 from scipy.io import wavfile
 import io
 
-# Use the non-interactive Agg backend, which is recommended as a
-# thread-safe backend.
-# See https://matplotlib.org/3.3.2/faq/howto_faq.html#working-with-threads.
-import matplotlib as mpl                
-mpl.use("agg")
-
-##############################################################################
-# Workaround for the limited multi-threading support in matplotlib.
-# Per the docs, we will avoid using `matplotlib.pyplot` for figures:
-# https://matplotlib.org/3.3.2/faq/howto_faq.html#how-to-use-matplotlib-in-a-web-application-server.
-# Moreover, we will guard all operations on the figure instances by the
-# class-level lock in the Agg backend.
-##############################################################################
-from matplotlib.backends.backend_agg import RendererAgg
-_lock = RendererAgg.lock
-
 # --Set page config
 apptitle = 'GWTC Global View'
 st.set_page_config(page_title=apptitle, layout="wide")
@@ -96,6 +80,13 @@ updated_excel = 'updated_GWTC.xlsx'
 
 # Loads df to use for the rest of the dash
 df = pd.read_excel(updated_excel)
+
+#max values
+max_mass = df['total_mass_source'].max()
+max_mass_1 = df['mass_1_source'].max()
+max_mass_2 = df['mass_2_source'].max()
+max_snr = df['network_matched_filter_snr'].max()
+max_lum = df['luminosity_distance'].max()
 
 # Count for total observations 
 count = event_df.commonName.unique().size
@@ -267,17 +258,18 @@ if event_input:
 else:
     st.experimental_set_query_params(event_name=select_event)
     
-
-st.divider()
-#CHARTS WITH USER INPUT
-if select_event or event_input:    
+if select_event or event_input:
     st.markdown('### Selected Event: ' + event_name)
     with st.expander(label="Breakdown: ", expanded=True):
         st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
         st.write('The :blue[[blue area]] indicates the margin of error for each source.')
-        st.write('The :red[red line |] indicates the largest value in the catalog.')
-        st.write('The largest total mass to date for this catalog is Event[:red[GW190426_190642]](https://gwtc-dash.streamlit.app/?event_name=GW190426_190642) at  :red[181.5 solar masses], with object 1 at :red[105.5 solar masses], and object 2 at :red[76.5 solar masses].')
+        st.write('The :red[red line |] indicates the largest value in the catalog selected: ' + selected_cat)
+        st.write('The largest total mass to date for all catalogs is Event [:red[GW190426_190642]](https://gwtc-dash.streamlit.app/?event_name=GW190426_190642) at  :red[181.5 solar masses], with object 1 at :red[105.5 solar masses], and object 2 at :red[76.5 solar masses].')
         st.write('*Note: Some events may not have error information.')
+
+st.divider()
+#CHARTS WITH USER INPUT
+if select_event or event_input:    
     ##Gauge Indicators
     total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
     total_mass_upper = selected_row['total_mass_source_upper'].values[0] + total_mass_source    
@@ -292,7 +284,7 @@ if select_event or event_input:
                 {'range': [total_mass_source, total_mass_upper], 'color': "lightskyblue"},
                 {'range': [total_mass_source, total_mass_lower], 'color': "lightskyblue"}],             
             'bgcolor': "white",
-            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 181}},
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': max_mass}},
     domain = {'x': [0, 1], 'y': [0, 1]}
     ))
     total_mass.update_layout(
@@ -300,6 +292,14 @@ if select_event or event_input:
         width=400,
         height=400,
     )
+    total_mass.add_annotation(
+    x=0.5,  
+    y=0,  
+    text=f'Max: {max_mass}',
+    showarrow=False,
+    font=dict(size=12, color='red')
+)
+
     #mass 1 gauge
     m1_lower = selected_row['mass_1_source_lower'].values[0] + selected_row['mass_1_source'].values[0] 
     m1_upper = selected_row['mass_1_source_upper'].values[0] + selected_row['mass_1_source'].values[0]    
@@ -314,7 +314,7 @@ if select_event or event_input:
                 {'range': [mass_1, m1_upper], 'color': "lightskyblue"},
                 {'range': [mass_1, m1_lower], 'color': "lightskyblue"}],             
             'bgcolor': "white",
-            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 105}},
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': max_mass_1, }},
     domain = {'x': [0, 1], 'y': [0, 1]}
     ))
     m1.update_layout(
@@ -322,6 +322,14 @@ if select_event or event_input:
         width=400,
         height=400,
     )
+    m1.add_annotation(
+    x=0.5,  # Adjust this value to position the label horizontally
+    y=0,  # Adjust this value to position the label vertically
+    text=f'Max: {max_mass_1}',
+    showarrow=False,
+    font=dict(size=12, color='red')
+)
+    
     #mass 2 gauge
     m2_lower = selected_row['mass_2_source_lower'].values[0] + selected_row['mass_2_source'].values[0] 
     m2_upper = selected_row['mass_2_source_upper'].values[0] + selected_row['mass_2_source'].values[0]    
@@ -336,7 +344,7 @@ if select_event or event_input:
                 {'range': [mass_2, m2_upper], 'color': "lightskyblue"},
                 {'range': [mass_2, m2_lower], 'color': "lightskyblue"}],
             'bgcolor': "white",           
-            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 76}},
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': max_mass_2}},
     domain = {'x': [0, 1], 'y': [0, 1]}
     ))
     m2.update_layout(
@@ -344,6 +352,14 @@ if select_event or event_input:
         width=400,
         height=400,
     )
+    m2.add_annotation(
+    x=0.5,  
+    y=0,  
+    text=f'Max: {max_mass_2}',
+    showarrow=False,
+    font=dict(size=12, color='red')
+)
+    
     #lum dist gauge
     lum_dist_lower = selected_row['luminosity_distance_lower'].values[0] + selected_row['luminosity_distance'].values[0] 
     lum_dist_upper = selected_row['luminosity_distance_upper'].values[0] + selected_row['luminosity_distance'].values[0]        
@@ -351,6 +367,7 @@ if select_event or event_input:
     dist = dist/1000
     lum_dist_lower = lum_dist_lower/1000
     lum_dist_upper = lum_dist_upper/1000 
+    lum_max = max_lum/1000
     lum_dist = go.Figure(go.Indicator(
     mode = "gauge+number",
     value = dist,
@@ -362,7 +379,7 @@ if select_event or event_input:
                 {'range': [dist, lum_dist_upper], 'color': "lightskyblue"},
                 {'range': [dist, lum_dist_lower], 'color': "lightskyblue"}],             
             'bgcolor': "white",
-            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 8.28}},
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': lum_max}},
     domain = {'x': [0, 1], 'y': [0, 1]}
     ))
     lum_dist.update_layout(
@@ -370,6 +387,14 @@ if select_event or event_input:
         width=400,
         height=400,
     )
+    
+    lum_dist.add_annotation(
+    x=0.5,  
+    y=0,  
+    text=f'Max: {lum_max}',
+    showarrow=False,
+    font=dict(size=12, color='red')
+)
     #snr gauge
     snr_lower = selected_row['network_matched_filter_snr_lower'].values[0] + selected_row['network_matched_filter_snr'].values[0] 
     snr_upper = selected_row['network_matched_filter_snr_upper'].values[0] + selected_row['network_matched_filter_snr'].values[0]
@@ -383,13 +408,21 @@ if select_event or event_input:
                 {'range': [snr, snr_lower], 'color': "lightskyblue"}],
             'bar': {'color': "#4751a5"},
             'bgcolor': "white",
-            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 33}},      
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': max_snr}},      
     ))
     snr_chart.update_layout(
     autosize=False,
     width=400,
     height=400,
     )
+    snr_chart.add_annotation(
+    x=0.5,  
+    y=0,  
+    text=f'Max: {max_snr}',
+    showarrow=False,
+    font=dict(size=12, color='red')
+)
+    
     ## RIDGE LINE PLOTS
     ridge_mass = go.Figure()
     ridge_mass.add_trace(go.Violin(x=df['total_mass_source'], line_color='#808080', name = ''))
@@ -399,7 +432,7 @@ if select_event or event_input:
             x0=total_mass_source,
             x1=total_mass_source,
             y0=0,
-            y1=2,  # Adjust the y1 value as needed to cover the violin plot height
+            y1=2,  
             line=dict(color="#4751a5", width=3),
         )
     )
@@ -412,16 +445,24 @@ if select_event or event_input:
         height=300,
         annotations=[
             dict(
-                text= "In relation to the catalogs mass distribution in solar mass.",
+                text= "In relation to the catalogs distribution in solar mass.",
                 xref="paper",
                 yref="paper",
-                x=0.5,  # Adjust the x position for centering
-                y=-0.5,  # Adjust the y position for distance from the chart
+                x=0.5, 
+                y=-0.5,  
                 showarrow=False,
                 font=dict(size=15),
             )
         ]
     )
+    
+    ridge_mass.add_annotation(
+    x=total_mass_source + 20,  
+    y=2,  
+    text=f'Mass: {total_mass_source}',
+    showarrow=False,
+    font=dict(size=12, color='red')
+)
     #mass1 plot
     ridge_mass1 = go.Figure()
     ridge_mass1.add_trace(go.Violin(x=df['mass_1_source'], line_color='#808080', name = ''))
@@ -431,7 +472,7 @@ if select_event or event_input:
             x0=mass_1,
             x1=mass_1,
             y0=0,
-            y1=2,  # Adjust the y1 value as needed to cover the violin plot height
+            y1=2, 
             line=dict(color="#4751a5", width=3),
         )
     )
@@ -439,7 +480,7 @@ if select_event or event_input:
     ridge_mass1.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_mass1.update_layout(
         autosize=False,
-        title = {'text': "Mass of source 1 (M<sub>☉</sub>) for" + event_name},
+        title = {'text': "Mass of source 1 (M<sub>☉</sub>) for " + event_name},
         width=400,
         height=300,
         annotations=[
@@ -447,13 +488,21 @@ if select_event or event_input:
                 text= "In relation to the catalogs distribution in solar mass.",
                 xref="paper",
                 yref="paper",
-                x=0.5,  # Adjust the x position for centering
-                y=-0.5,  # Adjust the y position for distance from the chart
+                x=0.5,  
+                y=-0.5,  
                 showarrow=False,
-                font=dict(size=14),
+                font=dict(size=15),
             )
         ]
     )
+    
+    ridge_mass1.add_annotation(
+    x=mass_1 + 10,  
+    y=2,  
+    text=f'Mass: {mass_1}',
+    showarrow=False,
+    font=dict(size=12, color='red')
+)
     #mass2 plot
     ridge_mass2 = go.Figure()
     ridge_mass2.add_trace(go.Violin(x=df['mass_2_source'], line_color='#808080', name = ''))
@@ -463,7 +512,7 @@ if select_event or event_input:
             x0=mass_2,
             x1=mass_2,
             y0=0,
-            y1=2,  # Adjust the y1 value as needed to cover the violin plot height
+            y1=2, 
             line=dict(color="#4751a5", width=3),
         )
     )
@@ -476,16 +525,23 @@ if select_event or event_input:
         height=300,
         annotations=[
             dict(
-                text= "In relation to the catalogs mass 2 distribution in solar mass.",
+                text= "In relation to the catalogs distribution in solar mass.",
                 xref="paper",
                 yref="paper",
                 x=0.5,  # Adjust the x position for centering
                 y=-0.5,  # Adjust the y position for distance from the chart
                 showarrow=False,
-                font=dict(size=14),
+                font=dict(size=15),
             )
         ]
     )
+    ridge_mass2.add_annotation(
+    x=mass_2 + 10,  
+    y=2,  
+    text=f'Mass: {mass_2}',
+    showarrow=False,
+    font=dict(size=12, color='red')
+)
 
     #lum_dist  plot
     ridge_dist = go.Figure()
@@ -670,7 +726,7 @@ st.subheader('GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo Dur
 st.write(' https://arxiv.org/abs/2111.03606')
 st.divider()
 st.header('About this app')
-st.write('This app was made use of data or software obtained from the Gravitational Wave Open Science Center (gwosc.org), a service of the LIGO Scientific Collaboration, the Virgo Collaboration, and KAGRA.')
+st.write('This app was made with the use of data or software obtained from the Gravitational Wave Open Science Center (gwosc.org), a service of the LIGO Scientific Collaboration, the Virgo Collaboration, and KAGRA.')
 st.write('To learn more about Gravitational waves please visit the [Gravitational Wave Open Science Center Learning Path](https://gwosc.org/path/)')
 st.write('GWOSC - https://gwosc.org')
 st.divider()
