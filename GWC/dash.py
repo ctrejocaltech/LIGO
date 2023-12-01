@@ -744,12 +744,12 @@ if select_event or event_input:
     else:
         st.write("Click on a event to view more details")
 
-st.divider()
-st.subheader('Full catalog information for selected event: ' + selected_event_name)
-st.dataframe(
-    new_df, 
-    column_config={"mass_1_source": {"format": "0.2f"}, "mass_2_source": {"format": "0.2f"}, "luminosity_distance": {"format": "0.2f"}, "network_matched_filter_snr": {"format": "0.2f"}}
-)
+    st.divider()
+    st.subheader('Full catalog information for selected event: ' + selected_event_name)
+    st.dataframe(
+        new_df, 
+        column_config={"mass_1_source": {"format": "0.2f"}, "mass_2_source": {"format": "0.2f"}, "luminosity_distance": {"format": "0.2f"}, "network_matched_filter_snr": {"format": "0.2f"}}
+    )
 
 st.divider()
 st.subheader('GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run')
