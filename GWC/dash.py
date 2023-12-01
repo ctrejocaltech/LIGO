@@ -746,9 +746,15 @@ if select_event or event_input:
 
     st.divider()
     st.subheader('Full catalog information for selected event: ' + selected_event_name)
-    st.dataframe(
-        new_df, 
-        column_config={"mass_1_source": {"format": "0.2f"}, "mass_2_source": {"format": "0.2f"}, "luminosity_distance": {"format": "0.2f"}, "network_matched_filter_snr": {"format": "0.2f"}}
+    st.dataframe(new_df, 
+        column_config={
+        "reference": st.column_config.LinkColumn("Reference"),
+        "jsonurl": st.column_config.LinkColumn("JSON"),
+        "mass_1_source": {"format": "0.2f"}, 
+        "mass_2_source": {"format": "0.2f"}, 
+        "luminosity_distance": {"format": "0.2f"}, 
+        "network_matched_filter_snr": {"format": "0.2f"}},
+        hide_index=True,
     )
 
 st.divider()
