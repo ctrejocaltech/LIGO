@@ -28,6 +28,7 @@ from copy import deepcopy
 import base64
 from scipy.io import wavfile
 import io
+from astropy.time import Time
 
 # --Set page config
 apptitle = 'GWTC Global View'
@@ -36,7 +37,15 @@ st.set_page_config(page_title=apptitle, layout="wide")
 #Title the app
 st.title('Gravitational-wave Catalog Dashboard')
 st.write('The Gravitational-wave Catalog is a cumulative set of gravitational wave transients maintained by the LIGO/Virgo/KAGRA collaboration. The online catalog contains confidently-detected events from multiple data releases. For further information, please visit https://gwosc.org')
-
+st.write(    
+    """
+    Catalogs:  
+    - General Catalogs like :red[GWTC] are cumulative catalogs describing all the gravitational-wave transients found in an observing run.
+    - Catalogs labeled as :red[Confident] have strain, segments, search results and parameter estimation values with corresponding 90 percent credible intervals.
+    - :red[Discovery Papers] contain notable events in the respective run. 
+    - Other Catalogs such as :red[Marginal, Preliminary or Auxillary], can be found here: https://gwosc.org/eventapi/html/
+    """
+        )
 # Fetch the data from the URL and load it into a DataFrame
 @st.cache_data
 def load_and_group_data():
@@ -66,7 +75,7 @@ with col1:
     if selected_cat in grouped_data:
         event_df = grouped_data[selected_cat]
 
-col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run. This Dashboard uses the following parameters: Total Mass, Mass 1, Mass 2, SNR and Luminosity Distance. The full list of parameters in the catalog is shown after selecting an event. ')
+col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run. This Dashboard uses the following parameters: Total Mass, Mass 1, Mass 2, SNR and Luminosity Distance. For a full list of parameters in the catalog, select an event. ')
 
 # Eliminate rows with missing mass_1_source or mass_2_source
 event_df = event_df.dropna(subset=['mass_1_source', 'mass_2_source'])
@@ -258,12 +267,18 @@ if event_input:
                 snr = selected_row['network_matched_filter_snr'].values[0]
                 chirp = selected_row['chirp_mass'].values[0]
                 
+        gps_time = gps_info
+
+        utc_datetime = Time(gps_time, format='gps').datetime
+        datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+                
 else:
     st.experimental_set_query_params(event_name=select_event)
     
 if select_event or event_input:  
     st.markdown('### Selected Event: ' + event_name)
     st.write('GPS Time:', + gps_info, " is the end time or merger time of the event in GPS seconds.")
+    st.write('This GPS time corresponds to the date: ', datetime)
     with st.expander(label="Legend for Gauges: ", expanded=True):
         #st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
         st.write('The :blue[[blue area]] indicates the margin of error for each source.')
@@ -436,7 +451,7 @@ if select_event or event_input:
     showarrow=False,
     font=dict(size=15, color='red')
 )
-    
+    st.subheader("Selected event " + event_name)
 ## RIDGE LINE PLOTS
     #total mass
     ridge_mass = go.Figure()
@@ -454,7 +469,7 @@ if select_event or event_input:
     ridge_mass.update_traces(orientation='h', side='positive', width=4, points=False, hovertemplate=None, hoverinfo='skip')
     ridge_mass.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_mass.update_layout(
-        title = {'text': "Event " + event_name + " Total Mass M<sub>☉</sub>"},
+        title = {'text': "Total Mass (M<sub>☉</sub>)"},
         autosize=False,
         width=400,
         height=300,
@@ -495,7 +510,7 @@ if select_event or event_input:
     ridge_mass1.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_mass1.update_layout(
         autosize=False,
-        title = {'text': "Event " + event_name + " Mass(M<sub>☉</sub>) Source 1"},
+        title = {'text': "Mass(M<sub>☉</sub>) Source 1"},
         width=400,
         height=300,
         annotations=[
@@ -535,7 +550,7 @@ if select_event or event_input:
     ridge_mass2.update_traces(orientation='h', side='positive', width=4, points=False, hovertemplate=None, hoverinfo='skip')
     ridge_mass2.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_mass2.update_layout(
-        title = {'text': "Event " + event_name + " Mass(M<sub>☉</sub>) Source 2"},
+        title = {'text': "Mass(M<sub>☉</sub>) Source 2"},
         autosize=False,
         width=400,
         height=300,
@@ -576,7 +591,7 @@ if select_event or event_input:
     ridge_dist.update_traces(orientation='h', side='positive', width=4, points=False, hovertemplate=None, hoverinfo='skip')
     ridge_dist.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_dist.update_layout(
-        title = {'text': "Luminosity Distance (Gpc) for " + event_name},
+        title = {'text': "Luminosity Distance (Gpc)"},
         autosize=False,
         width=400,
         height=300,
@@ -616,7 +631,7 @@ if select_event or event_input:
     ridge_snr.update_traces(orientation='h', side='positive', width=4, points=False, hovertemplate=None, hoverinfo='skip')
     ridge_snr.update_layout(xaxis_showgrid=False, xaxis_zeroline=False)
     ridge_snr.update_layout(
-        title = {'text': "Network Matched Filter SNR for " + event_name},
+        title = {'text': "Network Matched Filter SNR"},
         autosize=False,
         width=400,
         height=300,
@@ -649,6 +664,7 @@ if select_event or event_input:
     col9.write(ridge_mass2)
     st.divider()
     #second column
+    st.subheader("Selected event: " + event_name)
     col10, col11, = st.columns(2)
     col10.write(lum_dist)
     col10.write(ridge_dist)
@@ -729,7 +745,6 @@ if select_event or event_input:
             ax.set_yscale('log')
             ax.set_ylim(ymin=20, ymax=1024)
 
-
         #last column
         col12, col13 = st.columns(2)
         col12.subheader('Q-transform')            
@@ -749,154 +764,112 @@ if select_event or event_input:
         col13.write('The waveform is a simplified example of the gravitational waveform radiated during a compact binary coalescence with the mass values of this source. ')
     else:
         st.write("Click on a event to view more details")
+        
+    def format_gps(val):
+        gps_info = val["GPS"]
+        return f"${gps_info:.2f}$"
 
     def format_total_mass_source(val):
         mass = val["total_mass_source"]
         lower = val["total_mass_source_lower"]
         upper = val["total_mass_source_upper"]
-        return f"{mass} <span class='supsub'><sup>+{upper}</sup><sub>{lower}</sub></span>"
+        return f"${mass:.2f}_{{{lower}}}^{{+{upper}}}$"
     def format_mass_1_source(val):
         mass_1 = val["mass_1_source"]
         lower = val["mass_1_source_lower"]
         upper = val["mass_1_source_upper"]
-        return f"{mass_1} <span class='supsub'><sup>+{upper}</sup><sub>{lower}</sub></span>"
+        return f"${mass_1:.2f}_{{{lower}}}^{{+{upper}}}$"
     def format_mass_2_source(val):
         mass_2 = val["mass_2_source"]
         lower = val["mass_2_source_lower"]
         upper = val["mass_2_source_upper"]
-        return f"{mass_2} <span class='supsub'><sup>+{upper}</sup><sub>{lower}</sub></span>"
+        return f"${mass_2:.2f}_{{{lower}}}^{{+{upper}}}$"
 
     def format_network_matched_filter_snr(val):
         snr = val["network_matched_filter_snr"]
         lower = val["network_matched_filter_snr_lower"]
         upper = val["network_matched_filter_snr_upper"]
-        return f"{snr} <span class='supsub'><sup>+{upper}</sup><sub>{lower}</sub></span>"
+        return f"${snr:.2f}_{{{lower}}}^{{+{upper}}}$"
 
     def format_lum_distance(val):
         lum = val["luminosity_distance"]
         lower = val["luminosity_distance_lower"]
         upper = val["luminosity_distance_upper"]
-        return f"{lum} <span class='supsub'><sup>+{upper}</sup><sub>{lower}</sub></span>"
+        return f"${lum:.1f}_{{{lower}}}^{{+{upper}}}$"
     
     def format_chi_eff(val):
         chi = val["chi_eff"]
         lower = val["chi_eff_lower"]
         upper = val["chi_eff_upper"]
-        return f"{chi} <span class='supsub'><sup>+{upper}</sup><sub>{lower}</sub></span>"    
+        return f"${chi:.2f}_{{{lower}}}^{{+{upper}}}$"    
 
     def format_chirp_mass(val):
         chirp = val["chirp_mass_source"]
         lower = val["chirp_mass_source_lower"]
         upper = val["chirp_mass_source_upper"]
-        return f"{chirp} <span class='supsub'><sup>+{upper}</sup><sub>{lower}</sub></span>"
+        return f"${chirp:.2f}_{{{lower}}}^{{+{upper}}}$"
     
     def format_redshift(val):
         red = val["redshift"]
         lower = val["redshift_lower"]
         upper = val["redshift_upper"]
-        return f"{red} <span class='supsub'><sup>+{upper}</sup><sub>{lower}</sub></span>"
+        return f"${red:.2f}_{{{lower}}}^{{+{upper}}}$"
     
     def format_final_mass_source(val):
         final = val["final_mass_source"]
         lower = val["final_mass_source_lower"]
         upper = val["final_mass_source_upper"]
-        return f"{final} <span class='supsub'><sup>+{upper}</sup><sub>{lower}</sub></span>"
+        return f"${final:.2f}_{{{lower}}}^{{+{upper}}}$"
+    
+    renamed_df = new_df.rename(columns={"id": "ID", "commonName": "Common Name", "version": "Version", "catalog.shortName": "Catalog Short Name", "reference": "Reference", "far": "FAR", "p_astro": "P Astro"})
+
+    formatted_df = renamed_df.copy(deep=True)
+    formatted_df = formatted_df.fillna('')
+    formatted_df["GPS"] = formatted_df.apply(format_gps, axis=1)
+    formatted_df["Total Mass Source"] = formatted_df.apply(format_total_mass_source, axis=1)
+    formatted_df["Mass 1 Source"] = formatted_df.apply(format_mass_1_source, axis=1)
+    formatted_df["Mass 2 Source"] = formatted_df.apply(format_mass_2_source, axis=1)
+    formatted_df["Network Matched Filter SNR"] = formatted_df.apply(format_network_matched_filter_snr, axis=1)
+    formatted_df["Luminosity Distance"] = formatted_df.apply(format_lum_distance, axis=1)
+    formatted_df["Chi eff"] = formatted_df.apply(format_chi_eff, axis=1)
+    formatted_df["Chirp Mass Source"] = formatted_df.apply(format_chirp_mass, axis=1)
+    formatted_df["Redshift"] = formatted_df.apply(format_redshift, axis=1)
+    formatted_df["Final Mass Source"] = formatted_df.apply(format_final_mass_source, axis=1)
     
 
-    formatted_df = new_df.copy(deep=True)
-    formatted_df["total_mass_source"] = formatted_df.apply(format_total_mass_source, axis=1)
-    formatted_df["mass_1_source"] = formatted_df.apply(format_mass_1_source, axis=1)
-    formatted_df["mass_2_source"] = formatted_df.apply(format_mass_2_source, axis=1)
-    formatted_df["network_matched_filter_snr"] = formatted_df.apply(format_network_matched_filter_snr, axis=1)
-    formatted_df["luminosity_distance"] = formatted_df.apply(format_lum_distance, axis=1)
-    formatted_df["chi_eff"] = formatted_df.apply(format_chi_eff, axis=1)
-    formatted_df["chirp_mass_source"] = formatted_df.apply(format_chirp_mass, axis=1)
-    formatted_df["redshift"] = formatted_df.apply(format_redshift, axis=1)
-    formatted_df["final_mass_source"] = formatted_df.apply(format_final_mass_source, axis=1)
-    
-
-    columns_to_display = ["id", "commonName", "version", "catalog.shortName", "GPS", "reference", "jsonurl"]
-    second_columns = ["total_mass_source", "mass_1_source", "mass_2_source", "network_matched_filter_snr"]
-    third_columns = ["luminosity_distance", "chi_eff", "chirp_mass_source", "redshift", "far", "p_astro", "final_mass_source"]
+    first_columns = ["ID", "Common Name", "Version", "Catalog Short Name", "GPS", "Reference", "jsonurl"]
+    second_columns = ["Total Mass Source", "Mass 1 Source", "Mass 2 Source", "Network Matched Filter SNR"]
+    third_columns = ["Luminosity Distance", "Chi eff", "Chirp Mass Source", "Redshift", "FAR", "P Astro", "Final Mass Source"]
     st.divider()
     st.subheader('Full catalog information for selected event: ' + selected_event_name)
 
-    st.dataframe(new_df[columns_to_display].style.format({'GPS':'{:.2f}'}), hide_index=True)
-    # Display DataFrames with formatted content using st.markdown
-    st.markdown(
-        """
-        <style>
-        td sup {
-            vertical-align: super;
-            #font-size: smaller;
-        }
-        td sub {
-            vertical-align: sub;
-            #font-size: smaller;
-        }
-        table {
-            table-layout: fixed;
-        }
-        th, td {
-            height: 30px; 
-            line-height: 30px; 
-        }
-        th {
-            width: 210px; 
-        }
-        td {
-            width: 210px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("<table>", unsafe_allow_html=True)
-    st.markdown(
-        "<tr><th>Total Mass Source</th><th>Mass 1 Source</th><th>Mass 2 Source</th><th>Network SNR</th></tr>",
-        unsafe_allow_html=True,
-    )
-    for _, row in formatted_df[second_columns].iterrows():
-        st.markdown(
-            f"<tr><td>{row['total_mass_source']}</td><td>{row['mass_1_source']}</td><td>{row['mass_2_source']}</td><td>{row['network_matched_filter_snr']}</td></tr>",
-            unsafe_allow_html=True,
-        )
-    st.markdown("</table>", unsafe_allow_html=True)
+    
+    st.write(formatted_df[first_columns].to_markdown(index=False), unsfae_allow_html=True)
+    st.write(formatted_df[second_columns].to_markdown(index=False), unsafe_allow_html=True)
 
     with st.expander(label="Parameters:", expanded=True):
-        st.write(
-        '''
-        Total Mass Source 
-        Mass 1 Source
-        Mass 2 Source 
-        Network SNR 
-                ''')
-
-    st.markdown("<table>", unsafe_allow_html=True)
-    st.markdown(
-        "<tr><th>Luminosity Distance</th><th>Chi Eff</th><th>Chirp Mass Source</th><th>Redshift</th><th>FAR</th><th>P Astro</th><th>Final Mass Source</th></tr>",
-        unsafe_allow_html=True,
-    )
-    for _, row in formatted_df[third_columns].iterrows():
-        st.markdown(
-            f"<tr><td>{row['luminosity_distance']}</td><td>{row['chi_eff']}</td><td>{row['chirp_mass_source']}</td><td>{row['redshift']}</td><td>{row['far']}</td><td>{row['p_astro']}</td><td>{row['final_mass_source']}</td></tr>",
-            unsafe_allow_html=True,
+        st.write(    
+    """
+    - Total Mass Source: The source-frame combined mass of the primary and secondary mass.
+    - Mass 1 and Mass 2 Source: The source of the heavier and lighter objects in the binary, respectively.
+    - Network SNR: The matched filter singal to noise raiot in the gravitational wave detector network.
+    """
         )
-    st.markdown("</table>", unsafe_allow_html=True)
-    
-    with st.expander(label="Parameters:", expanded=True):
-        st.write('''
-        Luminosity Distance
-        Chi Eff
-        Chirp Mass Source 
-        Redshit
-        FAR
-        P Astro
-        Final Mass Source
-        ''')
 
-    
+    st.write(formatted_df[third_columns].to_markdown(index=False), unsafe_allow_html=True)
+
+    with st.expander(label="Parameters:", expanded=True):
+        st.write(    
+    """
+    - Luminosity Distance: The luminosity distance of the source. 
+    - Chi Eff: The effective inspiral spin parameter. 
+    - Chirp Mass Soruce: The source-frame chirp mass. 
+    - Redshift: The redshift depending on specified cosmology. 
+    - FAR: False alarm rate. 
+    - P Astro: Likelihood that a detected event is from a genuine source. 
+    - Final Mass Source: The source-frame remnant mass estimated using the spins evolved to the ISCO frequency. 
+    """
+        ) 
     st.divider()
 st.subheader('GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run')
 st.write(' https://arxiv.org/abs/2111.03606')
