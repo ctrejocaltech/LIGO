@@ -65,6 +65,7 @@ def load_and_group_data():
     return grouped_data
 
 grouped_data = load_and_group_data()
+
 st.divider()
 
 ## Create top row columns for selectbox and charts
@@ -75,7 +76,7 @@ with col1:
     if selected_cat in grouped_data:
         event_df = grouped_data[selected_cat]
 
-col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run. This Dashboard uses the following parameters: Total Mass, Mass 1, Mass 2, SNR and Luminosity Distance. For a full list of parameters in the catalog, select an event. ')
+col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run. This Dashboard uses the following parameters: Total Mass, Mass 1, Mass 2, SNR and Luminosity Distance. For a full list of parameters in the catalog, select an event to populate a breakdown at the bottom of the page. ')
 
 # Eliminate rows with missing mass_1_source or mass_2_source
 event_df = event_df.dropna(subset=['mass_1_source', 'mass_2_source'])
