@@ -819,7 +819,8 @@ if select_event or event_input:
         final = val["final_mass_source"]
         lower = val["final_mass_source_lower"]
         upper = val["final_mass_source_upper"]
-        return f"${final:.2f}_{{{lower}}}^{{+{upper}}}$"
+        return f"${final}_{{{lower}}}^{{+{upper}}}$"
+
     
     renamed_df = new_df.rename(columns={"id": "ID", "commonName": "Common Name", "version": "Version", "catalog.shortName": "Catalog Short Name", "reference": "Reference", "far": "FAR", "p_astro": "P Astro"})
 
@@ -844,7 +845,7 @@ if select_event or event_input:
     st.subheader('Full catalog information for selected event: ' + selected_event_name)
 
     
-    st.write(formatted_df[first_columns].to_markdown(index=False), unsfae_allow_html=True)
+    st.write(formatted_df[first_columns].to_markdown(index=False), unsafe_allow_html=True)
     st.write(formatted_df[second_columns].to_markdown(index=False), unsafe_allow_html=True)
 
     with st.expander(label="Parameters:", expanded=True):
@@ -879,4 +880,3 @@ st.write('This app was made with the use of data or software obtained from the G
 st.write('To learn more about Gravitational waves please visit the [Gravitational Wave Open Science Center Learning Path](https://gwosc.org/path/)')
 st.write('GWOSC - https://gwosc.org')
 st.divider()
-
