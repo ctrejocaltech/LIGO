@@ -50,21 +50,34 @@ st.write(
 @st.cache_data
 def load_and_group_data():
     df = pd.read_csv("https://gwosc.org/eventapi/csv/allevents/")
-    
-    catalogs = ['GWTC', 'GWTC-1-confident', 'GWTC-2', 'GWTC-2.1-confident', 'GWTC-3-confident', 'O3_Discovery_Papers']
-    
+
+    # Substrings to exclude
+    exclude_substrings = ['marginal', 'auxiliary', 'preliminary', 'initial']
+
+    # Filter out events based on excluded substrings
+    df_filtered = df[~df['catalog.shortName'].str.lower().str.contains('|'.join(exclude_substrings))]
+
+    # Get unique catalogs after exclusion
+    catalogs = df_filtered['catalog.shortName'].unique()
+
+    # Create a dictionary to store grouped data
     grouped_data = {}
-    
-    for catalog in catalogs:
-        if catalog == 'GWTC':
-            event_data = df[df['catalog.shortName'].str.contains('confident', case=False)]
-        else:
-            event_data = df[(df['catalog.shortName'] == catalog)]
-        grouped_data[catalog] = event_data
 
-    return grouped_data
+    # If there's more than one catalog, create a default catalog containing all names
+    if len(catalogs) > 1:
+        default_catalog = 'All Catalogs'
+        grouped_data[default_catalog] = pd.concat([df_filtered[df_filtered['catalog.shortName'] == cat] for cat in catalogs])
+    else:
+        default_catalog = catalogs[0]
 
-grouped_data = load_and_group_data()
+    # Create subgroups for each catalog
+    for cat in catalogs:
+        if cat != default_catalog:
+            grouped_data[cat] = df_filtered[df_filtered['catalog.shortName'] == cat]
+
+    return grouped_data, default_catalog
+
+grouped_data, default_catalog = load_and_group_data()
 
 st.divider()
 
@@ -820,7 +833,7 @@ if select_event or event_input:
         final = val["final_mass_source"]
         lower = val["final_mass_source_lower"]
         upper = val["final_mass_source_upper"]
-        return f"${final:.2f}_{{{lower}}}^{{+{upper}}}$"
+        return f"${final}_{{{lower}}}^{{+{upper}}}$"
     
     renamed_df = new_df.rename(columns={"id": "ID", "commonName": "Common Name", "version": "Version", "catalog.shortName": "Catalog Short Name", "reference": "Reference", "far": "FAR", "p_astro": "P Astro"})
 
@@ -845,7 +858,7 @@ if select_event or event_input:
     st.subheader('Full catalog information for selected event: ' + selected_event_name)
 
     
-    st.write(formatted_df[first_columns].to_markdown(index=False), unsfae_allow_html=True)
+    st.write(formatted_df[first_columns].to_markdown(index=False), unsafe_allow_html=True)
     st.write(formatted_df[second_columns].to_markdown(index=False), unsafe_allow_html=True)
 
     with st.expander(label="Parameters:", expanded=True):
