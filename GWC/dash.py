@@ -893,4 +893,3 @@ st.write('This app was made with the use of data or software obtained from the G
 st.write('To learn more about Gravitational waves please visit the [Gravitational Wave Open Science Center Learning Path](https://gwosc.org/path/)')
 st.write('GWOSC - https://gwosc.org')
 st.divider()
-
