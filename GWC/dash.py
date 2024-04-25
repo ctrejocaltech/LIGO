@@ -50,21 +50,35 @@ st.write(
 @st.cache_data
 def load_and_group_data():
     df = pd.read_csv("https://gwosc.org/eventapi/csv/allevents/")
-    
-    catalogs = ['GWTC', 'GWTC-1-confident', 'GWTC-2', 'GWTC-2.1-confident', 'GWTC-3-confident', 'O3_Discovery_Papers']
-    
+
+    # Substrings to exclude
+    exclude_substrings = ['marginal', 'auxiliary', 'preliminary', 'initial']
+
+    # Filter out events based on excluded substrings
+    df_filtered = df[~df['catalog.shortName'].str.lower().str.contains('|'.join(exclude_substrings))]
+
+    # Get unique catalogs after exclusion
+    catalogs = df_filtered['catalog.shortName'].unique()
+
+    # Create a dictionary to store grouped data
     grouped_data = {}
-    
-    for catalog in catalogs:
-        if catalog == 'GWTC':
-            event_data = df[df['catalog.shortName'].str.contains('confident', case=False)]
-        else:
-            event_data = df[(df['catalog.shortName'] == catalog)]
-        grouped_data[catalog] = event_data
 
-    return grouped_data
+    # If there's more than one catalog, create a default catalog containing all names
+    if len(catalogs) > 1:
+        default_catalog = 'All Catalogs'
+        grouped_data[default_catalog] = pd.concat([df_filtered[df_filtered['catalog.shortName'] == cat] for cat in catalogs])
+    else:
+        default_catalog = catalogs[0]
 
-grouped_data = load_and_group_data()
+    # Create subgroups for each catalog
+    for cat in catalogs:
+        if cat != default_catalog:
+            grouped_data[cat] = df_filtered[df_filtered['catalog.shortName'] == cat]
+
+    return grouped_data, default_catalog
+
+grouped_data, default_catalog = load_and_group_data()
+
 st.divider()
 
 ## Create top row columns for selectbox and charts
@@ -75,7 +89,7 @@ with col1:
     if selected_cat in grouped_data:
         event_df = grouped_data[selected_cat]
 
-col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run. This Dashboard uses the following parameters: Total Mass, Mass 1, Mass 2, SNR and Luminosity Distance. For a full list of parameters in the catalog, select an event. ')
+col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run. This Dashboard uses the following parameters: Total Mass, Mass 1, Mass 2, SNR and Luminosity Distance. For a full list of parameters in the catalog, select an event to populate a breakdown at the bottom of the page. ')
 
 # Eliminate rows with missing mass_1_source or mass_2_source
 event_df = event_df.dropna(subset=['mass_1_source', 'mass_2_source'])
@@ -820,7 +834,6 @@ if select_event or event_input:
         lower = val["final_mass_source_lower"]
         upper = val["final_mass_source_upper"]
         return f"${final}_{{{lower}}}^{{+{upper}}}$"
-
     
     renamed_df = new_df.rename(columns={"id": "ID", "commonName": "Common Name", "version": "Version", "catalog.shortName": "Catalog Short Name", "reference": "Reference", "far": "FAR", "p_astro": "P Astro"})
 
