@@ -291,7 +291,7 @@ if event_input:
         datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
                 
 else:
-    event_name=select_event
+    st.query_params.event_url=select_event
     
 if select_event or event_input:  
     st.markdown('### Selected Event: ' + event_name)
