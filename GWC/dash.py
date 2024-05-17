@@ -63,12 +63,14 @@ def load_and_group_data():
     # Create a dictionary to store grouped data
     grouped_data = {}
 
-    # If there's more than one catalog, create a default catalog containing all names
-    if len(catalogs) > 1:
-        default_catalog = 'All Catalogs'
-        grouped_data[default_catalog] = pd.concat([df_filtered[df_filtered['catalog.shortName'] == cat] for cat in catalogs])
+    gwtc_catalogs = [cat for cat in catalogs if 'GWTC' in cat]
+
+    # If there's more than one "GWTC" catalog, create a default catalog containing all relevant names
+    if len(gwtc_catalogs) > 1:
+        default_catalog = 'GWTC'
+        grouped_data[default_catalog] = pd.concat([df_filtered[df_filtered['catalog.shortName'] == cat] for cat in gwtc_catalogs])
     else:
-        default_catalog = catalogs[0]
+        default_catalog = gwtc_catalogs[0] if gwtc_catalogs else None  # Handle the case where no "GWTC" catalog is found
 
     # Create subgroups for each catalog
     for cat in catalogs:
@@ -121,6 +123,7 @@ col2.metric(label="Total Observations in this Catalog",
 )
 col2.write('This is the number of confident observations for the catalog selected, for a complete list of all events please visit: https://gwosc.org/eventapi/' )
 
+df_events = df.drop_duplicates(subset=['commonName'])
 # Sort mass for event type distribution
 def categorize_event(row):
     if row['mass_1_source'] < 3 and row['mass_2_source'] < 3:
@@ -129,10 +132,10 @@ def categorize_event(row):
         return 'Binary Black Hole'
     else:
         return 'Neutron Star - Black Hole'
-df['Event'] = df.apply(categorize_event, axis=1)
+df_events['Event'] = df_events.apply(categorize_event, axis=1)
 
 # Group data by event type and count occurrences
-grouped_df = df.groupby('Event').size().reset_index(name='Count')
+grouped_df = df_events.groupby('Event').size().reset_index(name='Count')
 
 # Custom color scale for events
 event_colors = alt.Scale(
@@ -181,7 +184,7 @@ col6.write('This network signal to noise ratio (SNR) is the quadrature sum of th
 st.divider()
 st.markdown('### Select an event from the Catalog: ' + selected_cat)
 #MAIN CHART FOR USER INPUT
-event_chart = px.scatter(df, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
+event_chart = px.scatter(df_events, x="mass_1_source", y="mass_2_source", color="network_matched_filter_snr", labels={
     "network_matched_filter_snr": "Network SNR",
     "luminosity_distance": "Luminosity Distance (Mpc)",
     "commonName": "Name",
