@@ -218,9 +218,17 @@ def filter_event_options(prefix):
     return df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
 event_options = filter_event_options("")
 
-# Get the current page URL and query parameter
-url = st.experimental_get_query_params()
-event_url = url.get("event_name", [""])[0]
+# Get the current page URL and query parameter using the new st.query_params method
+event_url = st.query_params.get("event_name", "")
+
+# If the query parameter is a list, take the first element (if exists) or default to an empty string
+if isinstance(event_url, list):
+    event_url = event_url[0] if event_url else ""
+
+# Example usage of the retrieved query parameter
+if event_url:
+    # Perform some action based on the event_url
+    st.write(f"Event URL parameter is: {event_url}")
 
 # Create the selectbox with options
 event_input = st.selectbox(
@@ -290,7 +298,7 @@ if event_input:
         datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
                 
 else:
-    st.experimental_set_query_params(event_name=select_event)
+    st.query_params.event_name=select_event
     
 if select_event or event_input:  
     st.markdown('### Selected Event: ' + event_name)
