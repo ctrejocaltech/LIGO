@@ -221,7 +221,7 @@ event_options = filter_event_options("")
 url = st.query_params.get("event_name", "")
 
 # Get the current page URL and query parameter
-event_url = url.get("event_name", [""])[0]
+event_url = url
 
 # Create the selectbox with options
 event_input = st.selectbox(
