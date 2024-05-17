@@ -268,14 +268,11 @@ if event_input:
     else:
         selected_event_name = ("Click on an Event")
     if select_event:
-        # Retrieve clicked x and y values
         clicked_x = select_event[0]['x']
         clicked_y = select_event[0]['y']
-        # Find the row in the DataFrame that matches the clicked x and y values
         selected_row = df[(df["mass_1_source"] == clicked_x) & (df["mass_2_source"] == clicked_y)]
         if not selected_row.empty:
-            selected_common_name = selected_row["commonName"].values[0]
-            event_name = selected_common_name
+            event_name = selected_row["commonName"].values[0]
             if gps_info := event_gps(event_name):
                 new_df = selected_event_row.copy()
                 mass_1 = selected_row['mass_1_source'].values[0]
@@ -298,7 +295,6 @@ if select_event or event_input:
     st.write('GPS Time:', + gps_info, " is the end time or merger time of the event in GPS seconds.")
     st.write('This GPS time corresponds to the date: ', datetime)
     with st.expander(label="Legend for Gauges: ", expanded=True):
-        #st.write("GPS Time:", gps_info, "is the end time or merger time of the event in GPS seconds.")
         st.write('The :blue[[blue area]] indicates the margin of error for each source.')
         st.write('The :red[red line |] indicates the largest value in the catalog selected')
         st.write('$M_{\odot}$ : Solar mass is $1.9891x10^{30}$ kg')
