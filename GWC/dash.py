@@ -218,8 +218,9 @@ def filter_event_options(prefix):
     return df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
 event_options = filter_event_options("")
 
+url = st.query_params.get("event_name", "")
+
 # Get the current page URL and query parameter
-url = st.experimental_get_query_params()
 event_url = url.get("event_name", [""])[0]
 
 # Create the selectbox with options
