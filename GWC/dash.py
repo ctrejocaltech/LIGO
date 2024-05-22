@@ -261,6 +261,7 @@ with st.expander(label="The chart allows the following interactivity: ", expande
 if event_input:
     selected_event_name = event_input
     selected_event_row = df[df['commonName'] == selected_event_name]
+    event_name = selected_event_name
     if not selected_event_row.empty:
         selected_x = selected_event_row['mass_1_source'].values[0]
         selected_y = selected_event_row['mass_2_source'].values[0]
@@ -285,10 +286,9 @@ if event_input:
         gps_time = gps_info
 
         utc_datetime = Time(gps_time, format='gps').datetime
-        datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
-                
+        datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')             
 else:
-    event_name=select_event
+    st.query_params["event_name"] = event_name
     
 if select_event or event_input:  
     st.markdown('### Selected Event: ' + event_name)
