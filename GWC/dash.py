@@ -218,10 +218,7 @@ def filter_event_options(prefix):
     return df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
 event_options = filter_event_options("")
 
-url = st.query_params.get("event_name", "")
-
-# Get the current page URL and query parameter
-event_url = url
+event_url = st.query_params.get("event_name", "")
 
 # Create the selectbox with options
 event_input = st.selectbox(
@@ -261,7 +258,6 @@ with st.expander(label="The chart allows the following interactivity: ", expande
 if event_input:
     selected_event_name = event_input
     selected_event_row = df[df['commonName'] == selected_event_name]
-    event_name = selected_event_name
     if not selected_event_row.empty:
         selected_x = selected_event_row['mass_1_source'].values[0]
         selected_y = selected_event_row['mass_2_source'].values[0]
@@ -309,8 +305,10 @@ if select_event or event_input:
     """
         )
         st.write('*Note: Some events may not have error information.')
+else:
+    selected_event_name = ("Click on an Event")
+            
 st.divider()
-
 
 ## CHARTS WITH USER INPUT
 if select_event or event_input:    
