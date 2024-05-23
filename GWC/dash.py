@@ -256,7 +256,6 @@ with st.expander(label="The chart allows the following interactivity: ", expande
 )
 ## USER INPUT OPTIONS
 if event_input:
-    selected_event_name = ""
     selected_event_name = event_input
     selected_event_row = df[df['commonName'] == selected_event_name]
     if not selected_event_row.empty:
@@ -285,7 +284,7 @@ if event_input:
         utc_datetime = Time(gps_time, format='gps').datetime
         datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')          
 else:
-    st.query_params["event_name"] = event_name
+    selected_event_name = ""
     
 if select_event or event_input:  
     st.markdown('### Selected Event: ' + event_name)
