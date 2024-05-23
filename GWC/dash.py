@@ -286,7 +286,7 @@ if event_input:
 else:
     selected_event_name = ""
     
-if select_event or event_input:  
+if select_event or event_input or event_url:  
     st.markdown('### Selected Event: ' + event_name)
     st.write('GPS Time:', + gps_info, " is the end time or merger time of the event in GPS seconds.")
     st.write('This GPS time corresponds to the date: ', datetime)
