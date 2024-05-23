@@ -284,7 +284,7 @@ if event_input:
         utc_datetime = Time(gps_time, format='gps').datetime
         datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')             
 else:
-    st.query_params["event_name"] = event_name
+    
     
 if select_event or event_input:  
     st.markdown('### Selected Event: ' + event_name)
