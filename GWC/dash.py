@@ -227,16 +227,26 @@ event_input = st.selectbox(
     key="event_input",
 )
 
+# Function to reset the state
+def reset_state():
+    st.session_state.event_input = ""
+    
+
 st.write("OR click on an event in the chart. :red[**Clear drop down menu to enable chart functionality]")
 select_event = plotly_events(event_chart, click_event=True)
 
+# Check if event_input is empty and select_event is not empty
 if not event_input and select_event:
     selected_event_row = df[(df['mass_1_source'] == select_event[0]['x']) & (df['mass_2_source'] == select_event[0]['y'])]
     if not selected_event_row.empty:
         event_input = selected_event_row['commonName'].values[0]
-        event_url = select_event
+        st.experimental_set_query_params(event_name=event_input)
+        event_url = event_input
+    else:
+        reset_state()
+        
 elif event_url and not event_input:
-    event_input = event_url
+    event_input = event_url        
 
 if event_input:
     selected_event_row = df[df['commonName'] == event_input]
@@ -244,6 +254,8 @@ if event_input:
         selected_x = selected_event_row['mass_1_source'].values[0]
         selected_y = selected_event_row['mass_2_source'].values[0]
         select_event = [{'x': selected_x, 'y': selected_y}]
+    else:
+        reset_state()
 
 with st.expander(label="The chart allows the following interactivity: ", expanded=True):
     st.write(
@@ -284,7 +296,7 @@ if event_input:
         utc_datetime = Time(gps_time, format='gps').datetime
         datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')          
 else:
-    selected_event_name = ""
+    st.write("Select an Event")
     
 if select_event or event_input or event_url:  
     st.markdown('### Selected Event: ' + event_name)
