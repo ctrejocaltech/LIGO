@@ -228,7 +228,7 @@ event_input = st.selectbox(
 )
 
 if event_input:
-    event_url = ""
+    event_url = event_input
 
 st.write("OR click on an event in the chart. :red[**Clear drop down menu to enable chart functionality]")
 select_event = plotly_events(event_chart, click_event=True)
