@@ -284,7 +284,7 @@ if event_input:
         utc_datetime = Time(gps_time, format='gps').datetime
         datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')          
 else:
-    event_name = event_url
+    event_name = st.write("Please select a new Event")
     
 if select_event or event_input or event_url:  
     st.markdown('### Selected Event: ' + event_name)
