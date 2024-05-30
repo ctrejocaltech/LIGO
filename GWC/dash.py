@@ -240,8 +240,7 @@ if not event_input and select_event:
     selected_event_row = df[(df['mass_1_source'] == select_event[0]['x']) & (df['mass_2_source'] == select_event[0]['y'])]
     if not selected_event_row.empty:
         event_input = selected_event_row['commonName'].values[0]
-        st.experimental_set_query_params(event_name=event_input)
-        event_url = event_input
+        event_url = st.query_params.get("event_name", "")
     else:
         reset_state()
         
