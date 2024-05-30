@@ -255,7 +255,7 @@ with st.expander(label="The chart allows the following interactivity: ", expande
     
 )
 ## USER INPUT OPTIONS
-if event_input:
+if event_input is not None:
     selected_event_name = event_input
     selected_event_row = df[df['commonName'] == selected_event_name]
     if not selected_event_row.empty:
@@ -309,7 +309,7 @@ if event_input:
 st.divider()
 
 ## CHARTS WITH USER INPUT
-if select_event or event_input:    
+if select_event or event_input is not None:    
     ##Gauge Indicators
     total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
     total_mass_upper = selected_row['total_mass_source_upper'].values[0] + total_mass_source    
