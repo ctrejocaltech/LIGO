@@ -227,8 +227,6 @@ event_input = st.selectbox(
     key="event_input",
 )
 
-if event_input:
-    event_url = event_input
 
 st.write("OR click on an event in the chart. :red[**Clear drop down menu to enable chart functionality]")
 select_event = plotly_events(event_chart, click_event=True)
@@ -240,6 +238,8 @@ if not event_input and select_event:
         event_url = select_event
 elif event_url and not event_input:
     event_input = event_url
+    if event_input and event_url:
+        event_url = ""
 
 if event_input:
     selected_event_row = df[df['commonName'] == event_input]
