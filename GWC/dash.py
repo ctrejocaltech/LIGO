@@ -252,7 +252,7 @@ with st.expander(label="The chart allows the following interactivity: ", expande
     - Box Selection
     - Download chart as a PNG
     """
-    
+
 )
 ## USER INPUT OPTIONS
 if event_input:
@@ -278,14 +278,15 @@ if event_input:
                 total_mass_source = selected_row['total_mass_source'].values[0]
                 snr = selected_row['network_matched_filter_snr'].values[0]
                 chirp = selected_row['chirp_mass'].values[0]
-                
+
         gps_time = gps_info
 
         utc_datetime = Time(gps_time, format='gps').datetime
         datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')          
-    
-    if select_event or event_input or event_url:  
-        st.markdown('### Selected Event: ' + event_name)
+
+    if select_event or event_input or event_url: 
+        event_name = ""
+        st.markdown(f'### Selected Event: {event_name}')
         st.write('GPS Time:', + gps_info, " is the end time or merger time of the event in GPS seconds.")
         st.write('This GPS time corresponds to the date: ', datetime)
         with st.expander(label="Legend for Gauges: ", expanded=True):
@@ -305,7 +306,7 @@ if event_input:
             st.write('*Note: Some events may not have error information.')
 else:
     event_name = st.write("Please select a new Event")        
-            
+
 st.divider()
 
 ## CHARTS WITH USER INPUT
