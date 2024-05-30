@@ -309,7 +309,7 @@ if event_input is not None:
 st.divider()
 
 ## CHARTS WITH USER INPUT
-if select_event or event_input is not None:    
+if select_event or event_input is not None and not selected_row.empty:    
     ##Gauge Indicators
     total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
     total_mass_upper = selected_row['total_mass_source_upper'].values[0] + total_mass_source    
