@@ -303,8 +303,8 @@ if event_input:
         """
             )
             st.write('*Note: Some events may not have error information.')
-    else:
-        event_name = st.write("Please select a new Event")        
+else:
+    event_name = st.write("Please select a new Event")        
             
 st.divider()
 
