@@ -283,30 +283,28 @@ if event_input:
 
         utc_datetime = Time(gps_time, format='gps').datetime
         datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')          
-else:
-    event_name = st.write("Please select a new Event")
     
-if select_event or event_input or event_url:  
-    st.markdown('### Selected Event: ' + event_name)
-    st.write('GPS Time:', + gps_info, " is the end time or merger time of the event in GPS seconds.")
-    st.write('This GPS time corresponds to the date: ', datetime)
-    with st.expander(label="Legend for Gauges: ", expanded=True):
-        st.write('The :blue[[blue area]] indicates the margin of error for each source.')
-        st.write('The :red[red line |] indicates the largest value in the catalog selected')
-        st.write('$M_{\odot}$ : Solar mass is $1.9891x10^{30}$ kg')
-        st.write(    
-    """
-    Parameters:
-    - Total Mass
-    - Mass of Source 1
-    - Mass of Source 2
-    - Luminosity Distance
-    - Network SNR
-    """
-        )
-        st.write('*Note: Some events may not have error information.')
-else:
-    event_name = st.write("Please select a new Event")        
+    if select_event or event_input or event_url:  
+        st.markdown('### Selected Event: ' + event_name)
+        st.write('GPS Time:', + gps_info, " is the end time or merger time of the event in GPS seconds.")
+        st.write('This GPS time corresponds to the date: ', datetime)
+        with st.expander(label="Legend for Gauges: ", expanded=True):
+            st.write('The :blue[[blue area]] indicates the margin of error for each source.')
+            st.write('The :red[red line |] indicates the largest value in the catalog selected')
+            st.write('$M_{\odot}$ : Solar mass is $1.9891x10^{30}$ kg')
+            st.write(    
+        """
+        Parameters:
+        - Total Mass
+        - Mass of Source 1
+        - Mass of Source 2
+        - Luminosity Distance
+        - Network SNR
+        """
+            )
+            st.write('*Note: Some events may not have error information.')
+    else:
+        event_name = st.write("Please select a new Event")        
             
 st.divider()
 
