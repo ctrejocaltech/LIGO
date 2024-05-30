@@ -218,6 +218,8 @@ def filter_event_options(prefix):
     return df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
 event_options = filter_event_options("")
 
+event_url = st.query_params.get("event_name", "")
+
 # Create the selectbox with options
 event_input = st.selectbox(
     "Select an event from the drop-down list:",
@@ -225,7 +227,8 @@ event_input = st.selectbox(
     key="event_input",
 )
 
-event_url = st.query_params.get("event_name", "")
+if event_input:
+    event_url = ""
 
 st.write("OR click on an event in the chart. :red[**Clear drop down menu to enable chart functionality]")
 select_event = plotly_events(event_chart, click_event=True)
