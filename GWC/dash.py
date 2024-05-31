@@ -91,8 +91,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     selected_cat = st.selectbox('Select an Event Catalog (Defaults to GWTC)', grouped_data.keys())
     if selected_cat in grouped_data:
-        event_df = grouped_data[selected_cat]
-        event_url = ""      
+        event_df = grouped_data[selected_cat]    
 
 col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run. This Dashboard uses the following parameters: Total Mass, Mass 1, Mass 2, SNR and Luminosity Distance. For a full list of parameters in the catalog, select an event to populate a breakdown at the bottom of the page. ')
 
