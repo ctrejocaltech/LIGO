@@ -311,7 +311,7 @@ if event_input:
 st.divider()
 
 ## CHARTS WITH USER INPUT
-if select_event or event_input or event_url:    
+if select_event or event_input:    
     ##Gauge Indicators
     total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
     total_mass_upper = selected_row['total_mass_source_upper'].values[0] + total_mass_source    
@@ -883,6 +883,8 @@ if select_event or event_input or event_url:
     """
         ) 
     st.divider()
+else:
+    st.write("Please Select a New Event")    
 st.subheader('GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run')
 st.write(' https://arxiv.org/abs/2111.03606')
 st.divider()
