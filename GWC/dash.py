@@ -81,6 +81,8 @@ def load_and_group_data():
 
 grouped_data, default_catalog = load_and_group_data()
 
+event_url = st.query_params.get("event_name", "")
+
 st.divider()
 
 ## Create top row columns for selectbox and charts
@@ -218,8 +220,6 @@ def filter_event_options(prefix):
     return df[df['commonName'].str.startswith(prefix)]['commonName'].tolist()
 event_options = filter_event_options("")
 
-event_url = st.query_params.get("event_name", "")
-
 # Create the selectbox with options
 event_input = st.selectbox(
     "Select an event from the drop-down list:",
@@ -311,7 +311,8 @@ if event_input:
 st.divider()
 
 ## CHARTS WITH USER INPUT
-if select_event or event_input:    
+if select_event or event_input:   
+    selected_row = "" 
     ##Gauge Indicators
     total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
     total_mass_upper = selected_row['total_mass_source_upper'].values[0] + total_mass_source    
