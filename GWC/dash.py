@@ -861,7 +861,7 @@ if event_input:
             """
             - Total Mass Source: The source-frame combined mass of the primary and secondary mass.
             - Mass 1 and Mass 2 Source: The source of the heavier and lighter objects in the binary, respectively.
-            - Network SNR: The matched filter singal to noise raiot in the gravitational wave detector network.
+            - Network SNR: The matched filter signal to noise ratio in the gravitational wave detector network.
             """
                 )
 
@@ -874,9 +874,9 @@ if event_input:
             - Chi Eff: The effective inspiral spin parameter. 
             - Chirp Mass Soruce: The source-frame chirp mass. 
             - Redshift: The redshift depending on specified cosmology. 
-            - FAR: False alarm rate. 
+            - FAR: False Alarm Rate. 
             - P Astro: Likelihood that a detected event is from a genuine source. 
-            - Final Mass Source: The source-frame remnant mass estimated using the spins evolved to the ISCO frequency. 
+            - Final Mass Source: The source-frame remnant mass estimated using the spins evolved to the innermost stable circular orbit frequency. 
             """
                 ) 
             st.divider() 
