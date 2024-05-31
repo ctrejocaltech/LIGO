@@ -91,7 +91,8 @@ col1, col2, col3 = st.columns(3)
 with col1:
     selected_cat = st.selectbox('Select an Event Catalog (Defaults to GWTC)', grouped_data.keys())
     if selected_cat in grouped_data:
-        event_df = grouped_data[selected_cat]    
+        event_df = grouped_data[selected_cat]
+        
 
 col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run. This Dashboard uses the following parameters: Total Mass, Mass 1, Mass 2, SNR and Luminosity Distance. For a full list of parameters in the catalog, select an event to populate a breakdown at the bottom of the page. ')
 
@@ -227,9 +228,6 @@ event_input = st.selectbox(
     key="event_input",
 )
 
-if event_input:
-    event_url = ""
-
 st.write("OR click on an event in the chart. :red[**Clear drop down menu to enable chart functionality]")
 select_event = plotly_events(event_chart, click_event=True)
 
@@ -240,8 +238,9 @@ if not event_input and select_event:
         event_url = select_event
 elif event_url and not event_input:
     event_input = event_url
+    if event_input and event_url:
+        event_url = ""
 
-selected_event_row = None
 if event_input:
     selected_event_row = df[df['commonName'] == event_input]
     if not selected_event_row.empty:
@@ -259,7 +258,7 @@ with st.expander(label="The chart allows the following interactivity: ", expande
     
 )
 ## USER INPUT OPTIONS
-if event_input and selected_event_row is not None:
+if event_input:
     selected_event_name = event_input
     selected_event_row = df[df['commonName'] == selected_event_name]
     if not selected_event_row.empty:
@@ -313,7 +312,7 @@ if event_input and selected_event_row is not None:
 st.divider()
 
 ## CHARTS WITH USER INPUT
-if select_event and selected_row is not None and not selected_row.empty:   
+if select_event or event_input:    
     ##Gauge Indicators
     selected_row = [""]
     total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
