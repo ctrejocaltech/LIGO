@@ -201,7 +201,6 @@ event_chart.update_traces(
     )
 )
 event_chart.update_layout(
-    hovermode='x unified',
     width=900,
     height=450,
     xaxis_title="Source Frame Mass 1 (M<sub>☉</sub>)", 
