@@ -307,7 +307,7 @@ if event_input:
                 )
                 st.write('*Note: Some events may not have error information.')
     else:
-        event_name = st.write("Please select a new Event")        
+        event_name = st.markdown("Please select a new Event")        
             
 st.divider()
 
@@ -466,6 +466,7 @@ if select_event or event_input:
     font=dict(size=15, color='red')
 )
     st.subheader("Selected event " + event_name)
+    
 ## RIDGE LINE PLOTS
     #total mass
     ridge_mass = go.Figure()
@@ -884,9 +885,7 @@ if select_event or event_input:
     - Final Mass Source: The source-frame remnant mass estimated using the spins evolved to the ISCO frequency. 
     """
         ) 
-    st.divider()
-else:
-    st.write("Please Select a New Event")    
+    st.divider()  
 st.subheader('GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run')
 st.write(' https://arxiv.org/abs/2111.03606')
 st.divider()
