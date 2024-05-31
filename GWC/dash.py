@@ -314,35 +314,34 @@ st.divider()
 ## CHARTS WITH USER INPUT
 if select_event or event_input:    
     ##Gauge Indicators
-    if selected_row is not None:
-        total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
-        total_mass_upper = selected_row['total_mass_source_upper'].values[0] + total_mass_source    
-        total_mass = go.Figure(go.Indicator(
-        mode = "gauge+number",
-        value = total_mass_source,
-        number = {"suffix": "M<sub>☉</sub>"},
-        title = {'text': "Total Mass (M<sub>☉</sub>)"},
-        gauge = {'axis': {'range': [None, 250]},
-                'bar': {'color': "#4751a5"},             
-                'steps' : [
-                    {'range': [total_mass_source, total_mass_upper], 'color': "lightskyblue"},
-                    {'range': [total_mass_source, total_mass_lower], 'color': "lightskyblue"}],             
-                'bgcolor': "white",
-                'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': max_mass}},
-        domain = {'x': [0, 1], 'y': [0, 1]}
-        ))
-        total_mass.update_layout(
-            autosize=False,
-            width=400,
-            height=400,
-        )
-        total_mass.add_annotation(
-        x=0.5,  
-        y=-0.05,  
-        text=f'Max in catalog: {max_mass} M<sub>☉</sub>',
-        showarrow=False,
-        font=dict(size=15, color='red')
+    total_mass_lower = selected_event_row['total_mass_source_lower'].values[0] + total_mass_source
+    total_mass_upper = selected_event_row['total_mass_source_upper'].values[0] + total_mass_source    
+    total_mass = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = total_mass_source,
+    number = {"suffix": "M<sub>☉</sub>"},
+    title = {'text': "Total Mass (M<sub>☉</sub>)"},
+    gauge = {'axis': {'range': [None, 250]},
+            'bar': {'color': "#4751a5"},             
+            'steps' : [
+                {'range': [total_mass_source, total_mass_upper], 'color': "lightskyblue"},
+                {'range': [total_mass_source, total_mass_lower], 'color': "lightskyblue"}],             
+            'bgcolor': "white",
+            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': max_mass}},
+    domain = {'x': [0, 1], 'y': [0, 1]}
+    ))
+    total_mass.update_layout(
+        autosize=False,
+        width=400,
+        height=400,
     )
+    total_mass.add_annotation(
+    x=0.5,  
+    y=-0.05,  
+    text=f'Max in catalog: {max_mass} M<sub>☉</sub>',
+    showarrow=False,
+    font=dict(size=15, color='red')
+)
     #mass 1 gauge
     m1_lower = selected_row['mass_1_source_lower'].values[0] + selected_row['mass_1_source'].values[0] 
     m1_upper = selected_row['mass_1_source_upper'].values[0] + selected_row['mass_1_source'].values[0]    
