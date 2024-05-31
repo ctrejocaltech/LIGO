@@ -311,9 +311,9 @@ if event_input:
 st.divider()
 
 ## CHARTS WITH USER INPUT
-if select_event or event_input:   
-    selected_row = "" 
+if select_event or event_input:    
     ##Gauge Indicators
+    selected_row = [""]
     total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
     total_mass_upper = selected_row['total_mass_source_upper'].values[0] + total_mass_source    
     total_mass = go.Figure(go.Indicator(
