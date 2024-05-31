@@ -227,7 +227,6 @@ event_input = st.selectbox(
     key="event_input",
 )
 
-
 st.write("OR click on an event in the chart. :red[**Clear drop down menu to enable chart functionality]")
 select_event = plotly_events(event_chart, click_event=True)
 
@@ -312,7 +311,7 @@ if event_input:
 st.divider()
 
 ## CHARTS WITH USER INPUT
-if select_event or event_input:    
+if select_event or event_input or event_url:    
     ##Gauge Indicators
     total_mass_lower = selected_row['total_mass_source_lower'].values[0] + total_mass_source
     total_mass_upper = selected_row['total_mass_source_upper'].values[0] + total_mass_source    
