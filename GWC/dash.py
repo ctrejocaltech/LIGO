@@ -879,7 +879,9 @@ if event_input:
             - Final Mass Source: The source-frame remnant mass estimated using the spins evolved to the ISCO frequency. 
             """
                 ) 
-            st.divider()  
+            st.divider() 
+else:
+    st.markdown("Please Select a New Event")             
 st.subheader('GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run')
 st.write(' https://arxiv.org/abs/2111.03606')
 st.divider()
