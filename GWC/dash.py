@@ -880,8 +880,8 @@ if event_input:
             """
                 ) 
             st.divider() 
-else:
-    st.markdown("Please Select a New Event")             
+    else:
+        st.markdown("Please Select a New Event")             
 st.subheader('GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run')
 st.write(' https://arxiv.org/abs/2111.03606')
 st.divider()
