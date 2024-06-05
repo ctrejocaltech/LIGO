@@ -31,7 +31,4 @@ hist_simulated = hist_simulated / hist_simulated.sum()
 
 kl_divergence = entropy(hist_simulated, hist_sorted)
 
-kl_d = sum(rel_entr(hist_sorted, hist_simulated))
-
 print(f"KL Divergence: {kl_divergence}")
-print(kl_d)
