@@ -40,7 +40,7 @@ st.write('The Gravitational-wave Catalog is a cumulative set of gravitational wa
 st.write(    
     """
     Catalogs:  
-    - General Catalogs like :red[GWTC] are cumulative catalogs describing all the gravitational-wave transients found in an observing run.
+    - :red[GWTC] is a cumulative catalogs describing all the gravitational-wave transients found in an observing run.
     - Catalogs labeled as :red[Confident] have strain, segments, search results and parameter estimation values with corresponding 90 percent credible intervals.
     - :red[Discovery Papers] contain notable events in the respective run. 
     - Other Catalogs such as :red[Marginal, Preliminary or Auxillary], can be found here: https://gwosc.org/eventapi/html/
@@ -95,7 +95,6 @@ with col1:
         
 
 col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run. This Dashboard uses the following parameters: Total Mass, Mass 1, Mass 2, SNR and Luminosity Distance. For a full list of parameters in the catalog, select an event to populate a breakdown at the bottom of the page. ')
-
 # Eliminate rows with missing mass_1_source or mass_2_source
 event_df = event_df.dropna(subset=['mass_1_source', 'mass_2_source'])
 event_df['total_mass_source'] = event_df['mass_1_source'] + event_df['mass_2_source'] #fixes missing mass issue
@@ -781,53 +780,60 @@ if event_input:
                 mass = val["total_mass_source"]
                 lower = val["total_mass_source_lower"]
                 upper = val["total_mass_source_upper"]
-                return f"${mass:.2f}_{{{lower}}}^{{+{upper}}}$"
+                return f"${mass:.2f}_{{{lower}}}^{{{upper}}}$"
             def format_mass_1_source(val):
                 mass_1 = val["mass_1_source"]
                 lower = val["mass_1_source_lower"]
                 upper = val["mass_1_source_upper"]
-                return f"${mass_1:.2f}_{{{lower}}}^{{+{upper}}}$"
+                return f"${mass_1:.2f}_{{{lower}}}^{{{upper}}}$"
             def format_mass_2_source(val):
                 mass_2 = val["mass_2_source"]
                 lower = val["mass_2_source_lower"]
                 upper = val["mass_2_source_upper"]
-                return f"${mass_2:.2f}_{{{lower}}}^{{+{upper}}}$"
+                return f"${mass_2:.2f}_{{{lower}}}^{{{upper}}}$"
 
             def format_network_matched_filter_snr(val):
                 snr = val["network_matched_filter_snr"]
                 lower = val["network_matched_filter_snr_lower"]
                 upper = val["network_matched_filter_snr_upper"]
-                return f"${snr:.2f}_{{{lower}}}^{{+{upper}}}$"
+                return f"${snr:.2f}_{{{lower}}}^{{{upper}}}$"
 
             def format_lum_distance(val):
                 lum = val["luminosity_distance"]
                 lower = val["luminosity_distance_lower"]
                 upper = val["luminosity_distance_upper"]
-                return f"${lum:.1f}_{{{lower}}}^{{+{upper}}}$"
+                return f"${lum:.1f}_{{{lower}}}^{{{upper}}}$"
             
             def format_chi_eff(val):
                 chi = val["chi_eff"]
                 lower = val["chi_eff_lower"]
                 upper = val["chi_eff_upper"]
-                return f"${chi:.2f}_{{{lower}}}^{{+{upper}}}$"    
+                return f"${chi:.2f}_{{{lower}}}^{{{upper}}}$"    
 
             def format_chirp_mass(val):
                 chirp = val["chirp_mass_source"]
                 lower = val["chirp_mass_source_lower"]
                 upper = val["chirp_mass_source_upper"]
-                return f"${chirp:.2f}_{{{lower}}}^{{+{upper}}}$"
+                return f"${chirp:.2f}_{{{lower}}}^{{{upper}}}$"
             
             def format_redshift(val):
                 red = val["redshift"]
                 lower = val["redshift_lower"]
                 upper = val["redshift_upper"]
-                return f"${red:.2f}_{{{lower}}}^{{+{upper}}}$"
+                return f"${red:.2f}_{{{lower}}}^{{{upper}}}$"
             
             def format_final_mass_source(val):
                 final = val["final_mass_source"]
                 lower = val["final_mass_source_lower"]
                 upper = val["final_mass_source_upper"]
-                return f"${final}_{{{lower}}}^{{+{upper}}}$"
+                return f"${final}_{{{lower}}}^{{{upper}}}$"
+            
+            
+            columns_to_append = ['total_mass_source_upper','mass_1_source_upper', 'mass_2_source_upper', 'network_matched_filter_snr_upper', 'luminosity_distance_upper', 'chi_eff_upper', 'chirp_mass_source_upper', 'redshift_upper', 'final_mass_source_upper']
+
+            for col in columns_to_append:
+                if col in new_df.columns:
+                    new_df[col] = new_df[col].apply(lambda x: '+' + str(x) if pd.notnull(x) else x)
             
             renamed_df = new_df.rename(columns={"id": "ID", "commonName": "Common Name", "version": "Version", "catalog.shortName": "Catalog Short Name", "reference": "Reference", "far": "FAR", "p_astro": "P Astro"})
 
@@ -843,7 +849,6 @@ if event_input:
             formatted_df["Chirp Mass Source"] = formatted_df.apply(format_chirp_mass, axis=1)
             formatted_df["Redshift"] = formatted_df.apply(format_redshift, axis=1)
             formatted_df["Final Mass Source"] = formatted_df.apply(format_final_mass_source, axis=1)
-            
 
             first_columns = ["ID", "Common Name", "Version", "Catalog Short Name", "GPS", "Reference", "jsonurl"]
             second_columns = ["Total Mass Source", "Mass 1 Source", "Mass 2 Source", "Network Matched Filter SNR"]
