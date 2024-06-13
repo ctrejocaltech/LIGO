@@ -57,9 +57,10 @@ def load_and_group_data():
     # Filter out events based on excluded substrings
     df_filtered = df[~df['catalog.shortName'].str.lower().str.contains('|'.join(exclude_substrings))]
 
+        
     # Get unique catalogs after exclusion
     catalogs = df_filtered['catalog.shortName'].unique()
-
+    
     # Create a dictionary to store grouped data
     grouped_data = {}
 
@@ -95,6 +96,7 @@ with col1:
         
 col1.write('Each catalog contains a collection of events observed during a LIGO/Virgo observation run. This Dashboard uses the following parameters: Total Mass, Mass 1, Mass 2, SNR and Luminosity Distance. For a full list of parameters in the catalog, select an event to populate a breakdown at the bottom of the page. ')
 event_df['total_mass_source'] = event_df['mass_1_source'] + event_df['mass_2_source'] #fixes missing mass issue
+event_df = event_df.sort_values(by='commonName')
 event_df.to_excel('updated_GWTC.xlsx', index=False)
 updated_excel = 'updated_GWTC.xlsx'
 
