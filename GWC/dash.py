@@ -59,7 +59,7 @@ def load_and_group_data():
 
     # Get unique catalogs after exclusion
     catalogs = df_filtered['catalog.shortName'].unique()
-
+    
     # Create a dictionary to store grouped data
     grouped_data = {}
 
