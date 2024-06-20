@@ -291,7 +291,7 @@ if event_input:
     
         if select_event or event_input or event_url:  
             st.markdown('### Selected Event: ' + event_name)
-            st.write(f"The event is classified as a {event}.")
+            st.write(f"The event is classified as a {event} Merger.")
             st.write('GPS Time:', + gps_info, " is the end time or merger time of the event in GPS seconds.")
             st.write('This GPS time corresponds to the date: ', datetime)
             with st.expander(label="Legend for Gauges: ", expanded=True):
