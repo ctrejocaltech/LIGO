@@ -282,6 +282,7 @@ if event_input:
                 total_mass_source = selected_row['total_mass_source'].values[0]
                 snr = selected_row['network_matched_filter_snr'].values[0]
                 chirp = selected_row['chirp_mass'].values[0]
+                event = selected_row['Event'].values[0]
                 
         gps_time = gps_info
 
@@ -290,6 +291,7 @@ if event_input:
     
         if select_event or event_input or event_url:  
             st.markdown('### Selected Event: ' + event_name)
+            st.write(f"The event is classified as a {event}.")
             st.write('GPS Time:', + gps_info, " is the end time or merger time of the event in GPS seconds.")
             st.write('This GPS time corresponds to the date: ', datetime)
             with st.expander(label="Legend for Gauges: ", expanded=True):
@@ -853,7 +855,7 @@ if event_input:
             formatted_df["Final Mass Source"] = formatted_df.apply(format_final_mass_source, axis=1)
 
             first_columns = ["ID", "Common Name", "Version", "Catalog Short Name", "GPS", "Reference", "jsonurl"]
-            second_columns = ["Total Mass Source", "Mass 1 Source", "Mass 2 Source", "Network Matched Filter SNR"]
+            second_columns = ["Total Mass Source", "Mass 1 Source", "Mass 2 Source", "Network Matched Filter SNR", "Event"]
             third_columns = ["Luminosity Distance", "Chi eff", "Chirp Mass Source", "Redshift", "FAR", "P Astro", "Final Mass Source"]
             st.divider()
             st.subheader('Full catalog information for selected event: ' + selected_event_name)
@@ -868,6 +870,7 @@ if event_input:
             - Total Mass Source: The source-frame combined mass of the primary and secondary mass.
             - Mass 1 and Mass 2 Source: The source of the heavier and lighter objects in the binary, respectively.
             - Network SNR: The matched filter signal to noise ratio in the gravitational wave detector network.
+            - Event: The type of merger event (BBH, BNS, NSBH).
             """
                 )
 
