@@ -23,22 +23,27 @@ def kl_function(simulated_filepath, sorted_filepath):
     cov_sim = [np.cov(simulated_chains[:,i,:].T) for i in range(2)]
     cov_sorted = [np.cov(sorted_chains[:,i,:].T) for i in range(2)]    
 
-    mu1 = mean_simulated[0, :]
-    cov1 = cov_sim[0]
+    # First set of mean and covariance
+    mu1_1 = mean_simulated[0, :]
+    cov1_1 = cov_sim[0]
 
-    mu2 = mean_sorted[0, :]
-    cov2 = cov_sorted[0]
+    mu2_1 = mean_sorted[0, :]
+    cov2_1 = cov_sorted[0]
 
-    kl_list = [kl_div(mu1, mu2, cov1, cov2)]
-    mu1 = mean_simulated[1, :]
-    cov1 = cov_sim[1]
+    kl_div1 = kl_div(mu1_1, mu2_1, cov1_1, cov2_1)
 
-    mu2 = mean_sorted[1, :]
-    cov2 = cov_sorted[1]
+    # Second set of mean and covariance
+    mu1_2 = mean_simulated[1, :]
+    cov1_2 = cov_sim[1]
 
-    kl_list.append(kl_div(mu1, mu2, cov1, cov2))
+    mu2_2 = mean_sorted[1, :]
+    cov2_2 = cov_sorted[1]
 
-    return kl_list, simulated_chains, sorted_chains
+    kl_div2 = kl_div(mu1_2, mu2_2, cov1_2, cov2_2)
+    
+    kl_results = [kl_div1, kl_div2]
+
+    return kl_results, kl_div1,kl_div2, simulated_chains, sorted_chains
 
 def find_npy_files(base_dir):
     npy_files = []
@@ -66,7 +71,7 @@ def pair_files(npy_files):
                 paired_files[number]['simulated'] = file
     return paired_files
 
-base_dir = '/Users/ligo/Documents/lisa/petra/results/fake_gaussian_results'
+base_dir = '/Users/ligo/Documents/lisa/petra/results/fake_gaussian_results_no_guess'
 output_filepath = '/Users/ligo/Documents/lisa/petra/results/kl_divergence_results.xlsx'
 
 # Find all .npy files in the directory and subdirectories
@@ -82,13 +87,15 @@ for number, files in paired_files.items():
         simulated_filepath = files['simulated']
         sorted_filepath = files['sorted']
 
-        kl_results, simulated_chains, sorted_chains = kl_function(simulated_filepath, sorted_filepath)
+        kl_results, kl_div1, kl_div2, simulated_chains, sorted_chains = kl_function(simulated_filepath, sorted_filepath)
 
         results.extend(
             {
                 "Simulated File": simulated_filepath,
                 "Sorted File": sorted_filepath,
-                "KL Divergence": kl_result,                
+                "KL Divergence": kl_results,
+                "KL Divergence 1": kl_div1,
+                "KL Divergence 2": kl_div2,             
                 "Simulated Chains": simulated_chains[j].flatten().tolist(),
                 "Sorted Chains": sorted_chains[j].flatten().tolist(),
             }

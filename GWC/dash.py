@@ -40,10 +40,14 @@ st.write('The Gravitational-wave Catalog is a cumulative set of gravitational wa
 st.write(    
     """
     Catalogs:  
-    - :red[GWTC] is a cumulative catalogs describing all the gravitational-wave transients found in an observing run.
+    - :red[GWTC] is a cumulative catalog describing all the gravitational-wave transients found in an observing run.
     - Catalogs labeled as :red[Confident] have strain, segments, search results and parameter estimation values with corresponding 90 percent credible intervals.
     - :red[Discovery Papers] contain notable events in the respective run. 
     - Other Catalogs such as :red[Marginal, Preliminary or Auxillary], can be found here: https://gwosc.org/eventapi/html/
+    - Notable events: 
+    - [GW150914 - First Detection](https://gwtc-dash.streamlit.app/?event_name=GW150914)
+    - [GW170817 - First binary neutron star detection & First electromagnetic counterpart](https://gwtc-dash.streamlit.app/?event_name=GW170817)
+    - [GW200105](https://gwtc-dash.streamlit.app/?event_name=GW200105) and [GW200115 - First confirmed neutron star-black hole mergers](https://gwtc-dash.streamlit.app/?event_name=GW200115)
     """
         )
 # Fetch the data from the URL and load it into a DataFrame
@@ -826,7 +830,6 @@ if event_input:
                 lower = val["final_mass_source_lower"]
                 upper = val["final_mass_source_upper"]
                 return f"${final}_{{{lower}}}^{{{upper}}}$"
-            
             
             columns_to_append = ['total_mass_source_upper','mass_1_source_upper', 'mass_2_source_upper', 'network_matched_filter_snr_upper', 'luminosity_distance_upper', 'chi_eff_upper', 'chirp_mass_source_upper', 'redshift_upper', 'final_mass_source_upper']
 
