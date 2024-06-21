@@ -239,8 +239,7 @@ if not event_input and select_event:
         event_url = select_event
 elif event_url and not event_input:
     event_input = event_url
-    if event_input and event_url:
-        event_url = ""
+    event_url = ""
 
 if event_input:
     selected_event_row = df[df['commonName'] == event_input]
@@ -248,6 +247,7 @@ if event_input:
         selected_x = selected_event_row['mass_1_source'].values[0]
         selected_y = selected_event_row['mass_2_source'].values[0]
         select_event = [{'x': selected_x, 'y': selected_y}]
+
 
 with st.expander(label="The chart allows the following interactivity: ", expanded=True):
     st.write(
